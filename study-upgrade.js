@@ -34,6 +34,7 @@
     return p;
   }
   function addQuestions(card,item,sec){
+    if(/^Học trước khi làm|^Mục tiêu và chuẩn bị FDE/i.test(sec.title))return; // Chương đọc trước, không tự thêm ô nộp vào lý thuyết.
     const blocks=sec.blocks||[];
     const isExercise=/(bài tập|thực hành|homework|esercizi|exercises?|exercise|lab|speaking|role.play|writing|reading|question|luyện|kiểm tra|test|portfolio|pratica|produzione|output|debugging)/i.test(sec.title);
     let total=0;
