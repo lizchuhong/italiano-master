@@ -1,40 +1,106 @@
-/* Guided lesson interface: navigation, traceable knowledge, mobile-first learning. */
-(function(){
-'use strict';
-const C=typeof all!=='undefined'&&Array.isArray(all);
-const items=C?all:lessons;
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const get=()=>items[current], id=x=>C?x.id:'I'+x.number;
-const labels=['Bắt đầu','Học kiến thức','Xem ví dụ','Làm bài','Đối chiếu'];
-const help=['Mục tiêu và cách học','Đọc các khái niệm cần thiết','Quan sát cách giải từng bước','Viết lời giải ngay dưới câu hỏi','So sánh, tự sửa và kết thúc'];
-function kind(title){
- const s=String(title).toLowerCase();
- if(/học trước khi làm bài|học trước khi làm fde|nội dung giáo trình banking gốc/i.test(s))return 1;
- if(/answer key|risposte|soluzioni|đáp án|lời giải|tự đánh giá|autovalutazione|check understanding|definition of done|review schedule|error log|dialogo modello|model dialogue|kiểm tra kết quả|tiêu chí đạt/i.test(s))return 4;
- if(/exercise|esercizi|homework|luyện|thực hành|lab|speaking|role.play|role-play|produzione|bài tập|portfolio|hybrid practice|output bắt buộc|debugging|testing exercise|qa-first questions|luận bài/i.test(s))return 3;
- if(/example|esempio|ví dụ|scenario|model|reading|copywriting|hội thoại mẫu|c\. ví dụ/i.test(s))return 2;
- if(/introduction|giới thiệu|mục tiêu|obiettivi|roadmap/i.test(s))return 0;
- return 1;
-}
-function order(item){
- const groups=[[],[],[],[],[]];
- item.sections.forEach((s,i)=>{groups[kind(s.title)].push(i)});
- return groups;
-}
-const jump=n=>{section=n;C?renderDay():renderLesson()};
-const open=i=>{if(i<0||i>=items.length)return;C?openDay(items[i].id):openLesson(i)};
+/* Guided lesson navigation. Section indices also identify saved answers. */
+(function () {
+  'use strict';
+
+  const C = typeof all !== 'undefined' && Array.isArray(all);
+  const items = C ? all : lessons;
+  const labels = ['Bắt đầu', 'Kiến thức', C ? 'Xem ví dụ' : 'Xem và nghe', 'Làm bài', 'Đối chiếu'];
+  const italianStages = [0, 1, 1, 1, 2, 3, 3, 3, 3, 4, 4, 3, 4, 4];
+  const italianLabels = [
+    'Mục tiêu', 'Ngữ pháp', 'Từ vựng', 'Phát âm', 'Nghe và nhắc lại',
+    'Luyện nói', 'Đọc hiểu và viết', 'Nhập vai', 'Bài tập', 'Đáp án',
+    'Hội thoại mẫu', 'Bài về nhà', 'Lịch ôn', 'Sổ lỗi'
+  ];
+  const id = item => C ? item.id : 'I' + item.number;
+  const sectionNumber = value => Number(/^([0-9]+)\.\s/.exec(value.title)?.[1]) - 1;
+  const cleanTitle = value => value.title.replace(/^\d+\.\s*|^[A-E]\.\s*/g, '');
+  const sectionLabel = value => value.guideLabel ||
+    (!C && italianLabels[sectionNumber(value)]) || cleanTitle(value);
+  const e = s => String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[c]);
+
+  function stageOf(value) {
+    if (value.guideStage !== undefined) return value.guideStage;
+    if (!C) return italianStages[sectionNumber(value)] ?? -1;
+    const title = cleanTitle(value);
+    if (/^(Học trước khi làm bài|Lab mở rộng|Finance\/Economics)/i.test(title)) return -1;
+    if (/^Giới thiệu|^What are we learning\?|^Why does it matter\?|^Mục tiêu/i.test(title)) return 0;
+    if (/check understanding|definition of done|^Đáp án|^Tự đánh giá/i.test(title)) return 4;
+    if (/example|ví dụ|^Code \/ cấu trúc mẫu/i.test(title)) return 2;
+    if (/exercise|lab|hybrid|interview question|qa-first questions|bài tập/i.test(title)) return 3;
+    return 1;
+  }
+
+  function order(item) {
+    if (item.studyFlow) return item.studyFlow;
+    const groups = labels.map(() => []);
+    item.sections.forEach((value, index) => groups[stageOf(value)]?.push(index));
+    if (!C) {
+      const prioritize = (stage, first) => {
+        const index = groups[stage].findIndex(i => first(item.sections[i]));
+        if (index > 0) groups[stage].unshift(...groups[stage].splice(index, 1));
+      };
+      prioritize(2, value => Boolean(value.sampleText));
+      prioritize(3, value => sectionNumber(value) === 8);
+    }
+    return groups;
+  }
+
+  function hasExercises(item, index) {
+    const value = item.sections[index];
+    if (value.practice || order(item)[3].includes(index)) return true;
+    const title = cleanTitle(value);
+    if (!C) return /^1[56]\. /.test(value.title);
+    return /^(Thực hành hai ứng dụng|Mẫu và bài tập nâng cao|Hướng dẫn từ số 0|Lab mở rộng)/i.test(title);
+  }
+
+  function open(index, target) {
+    const item = items[index];
+    if (!item) return;
+    if (C) openDay(item.id, target);
+    else openLesson(index, target);
+  }
+
+  function resume() {
+    const reading = state.reading;
+    const index = items.findIndex(item => id(item) === reading?.id);
+    if (index < 0) {
+      const first = items.findIndex(item => !state.done?.[C ? item.id : item.number]);
+      open(Math.max(first, 0));
+      return;
+    }
+    const primary = order(items[index]).flat();
+    open(index, primary.includes(reading.section) ? reading.section : primary[0]);
+  }
+
+  function jump(index) {
+    if (index === section) return;
+    section = index;
+    if (C) renderDay();
+    else renderLesson();
+  }
+
+  function button(text, action, className = '') {
+    const element = document.createElement('button');
+    element.type = 'button';
+    element.className = className;
+    element.textContent = text;
+    element.addEventListener('click', action);
+    return element;
+  }
+
 function showLanding(){
  document.body.classList.remove('guided-lesson','reading-mode');
  const pulse=root.querySelector('.lp-home-pulse');
  root.querySelectorAll('.resume-banner').forEach(b=>b.remove());
  root.querySelector(':scope > h2')?.remove();
  if(pulse)pulse.remove();
- const intro=document.createElement('section');intro.className='guide-intro';intro.innerHTML='<span class="guide-eyebrow">HỌC THEO TỪNG BƯỚC</span><h2>Học gì hôm nay?</h2><p>① Mở bài → ② Đọc kiến thức → ③ Xem mẫu → ④ Làm từng câu → ⑤ Đối chiếu và ôn.</p>';
+ const intro=document.createElement('section');intro.className='guide-intro';intro.innerHTML='<span class="guide-eyebrow">HỌC THEO TỪNG BƯỚC</span><h2>Học gì hôm nay?</h2><p>Xem kiến thức và ví dụ, sau đó làm từng câu rồi đối chiếu.</p>';
  const actions=document.createElement('div');actions.className='guide-row';
  const btn=(t,fn)=>{const b=document.createElement('button');b.textContent=t;b.addEventListener('click',fn);actions.append(b)};
- const r=state.reading;
- btn('▶ Tiếp tục bài đang học',()=>{let i=items.findIndex(x=>id(x)===r?.id);if(i<0)i=items.findIndex(x=>!state.done?.[C?x.id:x.number]);if(i<0)i=0;open(i)});
- btn('✍ Bắt đầu từ bài đầu',()=>open(0));
+ if(state.reading) btn('Tiếp tục bài đang học',resume);
+ else btn('Bắt đầu bài 1',()=>open(0));
  intro.append(actions);
  root.prepend(intro);
  if(pulse){
@@ -70,8 +136,10 @@ function showLanding(){
   const results=document.createElement('div');results.className='guide-results';
   input.addEventListener('input',()=>{
    const v=input.value.toLocaleLowerCase('vi').trim();results.innerHTML='';
-   if(v.length<2)return;
-   const matches=items.map((x,i)=>({x,i})).filter(({x,i})=>(x.title+' '+(i+1)+' '+id(x)+' bài '+(i+1)).toLocaleLowerCase('vi').includes(v)).slice(0,20);
+   if(!v)return;
+   const matches=items.map((x,i)=>({x,i})).filter(({x,i})=>/^\d+$/.test(v)
+     ? i+1===Number(v)
+     : (x.title+' '+id(x)+' bài '+(i+1)).toLocaleLowerCase('vi').includes(v)).slice(0,20);
    matches.forEach(({x,i})=>{const b=document.createElement('button');b.className='guide-result';b.textContent=(i+1)+'. '+x.title;b.addEventListener('click',()=>open(i));results.append(b)});
    if(!matches.length)results.textContent='Không thấy tên bài phù hợp. Thử từ khóa khác.';
   });
@@ -79,117 +147,287 @@ function showLanding(){
   intro.insertAdjacentElement('afterend',search);
  }
 }
-function trustedSource(item,s){
- const t=s.title.toLowerCase();
- if(C&&/^QA/.test(item.id)){
-  if(/nội dung giáo trình banking gốc/i.test(t))return ['Tài liệu người học cung cấp','Nội dung giáo trình Banking 30 ngày; các ngưỡng và quy tắc trong bài có thể là ví dụ đào tạo, không phải chính sách ngân hàng hiện hành.'];
-  if(/từ số 0|luyện 3 cấp|ví dụ|banking qa/i.test(t))return ['Giải thích biên soạn thêm','Bài học hỗ trợ và tình huống ngân hàng giả lập; không đại diện hệ thống thật.'];
- }
- if(C&&/^W4[1-4]D/.test(item.id))return ['Bài FDE biên soạn mở rộng','Các bài lab là mô phỏng triển khai sản phẩm, kiểm tra bằng code/thử nghiệm của chính bạn.'];
- if(!C&&item.number>18&&!/laboratorio ampliato|economia|học trước khi/i.test(t))return ['Giáo trình mở rộng tháng 11–12','Ví dụ hội thoại và dữ liệu tour là tình huống học tập. Xác minh thông tin địa điểm, giá và lịch trước khi dùng thực tế.'];
- if(/lab mở rộng|laboratorio ampliato|học trước khi|economia del turismo/i.test(t))return ['Phần bổ sung để luyện tập','Ví dụ và bài tập mô phỏng; chỉ ghi nhận là hoàn thành sau khi đã thực hành.'];
- return ['Nội dung của giáo trình đang học','Bài tập và phần lý thuyết hiện tại lấy từ cùng một bài.'];
-}
-function cleanSection(s){return s.title.replace(/^\d+\.\s*/, '').replace(/^([A-E])\.\s*/, '')}
-function related(item,groups){
- const concept=groups[1],examples=groups[2];
- const taught=concept.filter(i=>/Học trước khi làm/i.test(item.sections[i].title));
- const manual=concept.filter(i=>/giáo trình Banking gốc|Grammatica|Concept explanation|Beginner Deep Dive|từ số 0/i.test(item.sections[i].title));
- const picks=[...taught,...manual.slice(0,2),...examples.slice(0,2),...concept.slice(0,2)];
- return [...new Set(picks)].filter(i=>i!==section).slice(0,5);
-}
-function lessonView(){
- const item=get();if(!item)return;
- document.body.classList.add('guided-lesson','reading-mode');
- const card=[...root.querySelectorAll('.card')].find(e=>e.querySelector('.lesson-nav,.navdays'));
- if(!card)return;
- const groups=order(item),stage=kind(item.sections[section].title),allOrder=groups.flat();
- const pos=allOrder.indexOf(section);
- const hero=document.createElement('section');hero.className='guide-lesson-hero';
- hero.innerHTML='<span class="guide-eyebrow">BÀI '+(current+1)+' / '+items.length+'</span><h2>'+esc(item.title)+'</h2><p>Học đúng chủ đề của bài này. Mỗi câu được nhập và lưu riêng; bạn có thể quay lại kiến thức ngay trong lúc làm.</p>';
- const tabs=document.createElement('div');tabs.className='guide-steps';tabs.setAttribute('role','group');tabs.setAttribute('aria-label','5 bước học bài');
- labels.forEach((label,i)=>{
-  const b=document.createElement('button');b.className='guide-step'+(stage===i?' active':'');
-  b.innerHTML='<span>'+(i+1)+'</span><strong>'+esc(label)+'</strong><small>'+esc(help[i])+'</small>';
-  b.disabled=!groups[i].length;b.addEventListener('click',()=>jump(groups[i][0]));tabs.append(b);
- });
- hero.append(tabs);
- // Put a simple section dropdown and explain where the learning material lives.
- const top=document.createElement('div');top.className='guide-location';
- const select=document.createElement('select');select.setAttribute('aria-label','Chọn mục trong bước đang học');
- groups[stage].forEach(i=>{const option=document.createElement('option');option.value=i;option.textContent=cleanSection(item.sections[i]);option.selected=i===section;select.append(option)});
- select.addEventListener('change',()=>jump(Number(select.value)));
- const label=document.createElement('label');label.textContent='Mục hiện tại:';
- top.append(label,select);hero.append(top);
- const sourceSection=item.sections.find(x=>/^Học trước khi làm/i.test(x.title));
- if(sourceSection){
-   const allText=(sourceSection.blocks||[]).map(b=>b.text||'').join(' ');
-   const url=allText.match(/https:\/\/(?:docs\.python\.org|developer\.mozilla\.org|git-scm\.com|www\.postgresql\.org|fastapi\.tiangolo\.com|react\.dev|docs\.docker\.com|platform\.openai\.com|www\.treccani\.it|api-security\.owasp\.org)\/[^\s;]+/i)?.[0];
-   if(url){const ref=document.createElement('a');ref.href=url;ref.target='_blank';ref.rel='noopener noreferrer';ref.className='guide-reference-link';ref.textContent='↗ Mở tài liệu chính thức để đối chiếu';hero.append(ref)}
- }
- const map=document.createElement('div');map.className='guide-source';
- const [origin,warning]=trustedSource(item,item.sections[section]);
- map.innerHTML='<strong>'+esc(origin)+'</strong><p>'+esc(warning)+'</p>';
- hero.append(map);
- if(stage===4){
-   const reviewTools=document.createElement('details');reviewTools.className='guide-outline';
-   reviewTools.innerHTML='<summary>Quiz 3 câu nền tảng của nhóm học (khác bài tập đang học)</summary><p>Chỉ dùng để tự ôn khái niệm chung. Không thay thế đáp án và bài tập của bài hiện tại.</p>';
-   const btn=document.createElement('button');btn.className='secondary';btn.textContent='Mở quiz kiến thức nền';btn.addEventListener('click',()=>window.LearningPlus?.quizView?.(item));reviewTools.append(btn);hero.append(reviewTools);
- }
- // Show knowledge links before exercise. Do not claim every existing exercise is solvable if it isn't.
- if(stage===3){
-  const prep=document.createElement('div');prep.className='guide-prereq';
-  prep.innerHTML='<strong>📚 Cần xem trước khi làm bài này</strong><p>Đây là các mục lý thuyết/ví dụ có trong <em>chính bài hiện tại</em>. Đọc chúng rồi quay lại câu hỏi; nếu yêu cầu thêm kiến thức chưa giảng, đừng đoán, hãy ghi “cần nguồn bổ sung”.</p>';
-  const row=document.createElement('div');row.className='guide-row';
-  related(item,groups).forEach(i=>{const b=document.createElement('button');b.textContent=cleanSection(item.sections[i]);b.className='secondary';b.addEventListener('click',()=>jump(i));row.append(b)});
-  if(!row.children.length){const p=document.createElement('p');p.textContent='Bài chưa có phần lý thuyết hoặc ví dụ riêng. Đừng coi bài này là đủ kiến thức để tự làm; kiểm tra học phần trước hoặc tài liệu tham chiếu.';prep.append(p)}
-  else prep.append(row);
-  hero.append(prep);
- }
- const nav=card.querySelector('.lesson-nav,.navdays');
- if(nav){
-  const details=document.createElement('details');details.className='guide-outline';
-  const summary=document.createElement('summary');summary.textContent='Mở mục lục chi tiết ('+item.sections.length+' mục)';
-  nav.parentNode.insertBefore(details,nav);details.append(summary,nav);
-  nav.classList.add('guide-toc-list');
- }
- const source=card.querySelector('h2');if(source)source.classList.add('guide-old-heading');
- const otherAction=card.querySelector('.lp-inline-actions');if(otherAction)otherAction.remove();
- const inserted=card.previousElementSibling;
- if(inserted&&inserted.classList.contains('row'))inserted.insertAdjacentElement('afterend',hero);
- else card.insertAdjacentElement('beforebegin',hero);
- const footer=document.createElement('div');footer.className='guide-footer';
- const left=document.createElement('button');left.className='secondary';left.textContent='← Mục trước';left.disabled=pos<=0;left.addEventListener('click',()=>jump(allOrder[pos-1]));
- const count=document.createElement('div');count.className='guide-count';count.textContent='Mục '+(pos+1)+' / '+allOrder.length;
- const next=document.createElement('button');next.textContent=pos===allOrder.length-1?'Hoàn thành, sang bài tiếp →':'Mục tiếp →';next.addEventListener('click',()=>pos===allOrder.length-1?open(Math.min(items.length-1,current+1)):jump(allOrder[pos+1]));
- footer.append(left,count,next);document.body.append(footer);
- document.querySelectorAll('body > .guide-footer').forEach((f,i,a)=>{if(i<a.length-1)f.remove()});
- const standalone=root.querySelector('#work')?.closest('.card');
- if(standalone&&!standalone.closest('details')){const details=document.createElement('details');details.className='guide-legacy';details.innerHTML='<summary>Ghi chú hoặc chạy thử HTML/JS (tùy chọn)</summary>';standalone.parentElement.insertBefore(details,standalone);details.append(standalone)}
-}
-function topNav(){
- const nav=document.querySelector('header nav');if(!nav||nav.querySelector('.guide-mainnav'))return;
- const extras=document.createElement('details');extras.className='guide-extras';
- extras.innerHTML='<summary>☰ Thêm công cụ</summary>';
- const contents=document.createElement('div');contents.className='guide-extra-content';
- while(nav.firstChild)contents.append(nav.firstChild);
- extras.append(contents);
- const basic=document.createElement('div');basic.className='guide-mainnav';
- function navBtn(text,cb){const b=document.createElement('button');b.textContent=text;b.addEventListener('click',cb);basic.append(b)}
- navBtn('🏠 Khóa học',()=>home());
- navBtn('▶ Học tiếp',()=>{const i=items.findIndex(x=>id(x)===state.reading?.id);open(i>=0?i:0)});
- navBtn('✍ Làm bài',()=>{const saved=items.findIndex(x=>id(x)===state.reading?.id);const item=items[saved>=0?saved:current]||items[0];const groups=order(item);const i=groups[3][0]??0;if(C)openDay(item.id,i);else openLesson(items.indexOf(item),i)});
- navBtn('🔁 Ôn tập',()=>window.LearningPlus?.srsView?.());
- nav.append(basic,extras);
-}
-function cleanFooter(){for(const f of document.querySelectorAll('body > .guide-footer'))f.remove();document.body.classList.remove('guided-lesson')}
-const oldHome=home;home=function(){cleanFooter();oldHome();showLanding()};
-if(C){
- const origWeek=weekView;weekView=function(i){cleanFooter();origWeek(i)};
- const oldRender=renderDay;renderDay=function(){cleanFooter();oldRender();lessonView()};
-}else{
- const oldRender=renderLesson;renderLesson=function(){cleanFooter();oldRender();lessonView()};
-}
-topNav();home();
-window.GuidedStudy={order,kind,lessonView};
+
+  function resources(item, primary, card) {
+    const extras = item.sections.map((_, index) => index).filter(index => !primary.includes(index));
+    if (!extras.length) return;
+    const details = document.createElement('details');
+    details.className = 'guide-resources';
+    details.open = extras.includes(section);
+    const summary = document.createElement('summary');
+    summary.textContent = 'Tài liệu và bài luyện thêm';
+    details.append(summary);
+
+    const groups = new Map();
+    for (const index of extras) {
+      const value = item.sections[index];
+      let label = 'Bổ sung';
+      if (C && item.studyFlow) {
+        if (/^Hướng dẫn từ số 0/.test(value.title)) label = 'IT nền tảng';
+        else if (/^[BD]\. /.test(value.title)) label = 'Giáo trình và thực hành Banking';
+        else label = 'QA tổng quát · ' + item.sections[0].blocks[0].text;
+      }
+      if (!groups.has(label)) groups.set(label, []);
+      groups.get(label).push(index);
+    }
+    for (const [label, indices] of groups) {
+      const list = document.createElement('div');
+      list.className = 'guide-row';
+      if (groups.size > 1) {
+        const name = document.createElement('p');
+        name.className = 'guide-resource-label';
+        name.textContent = label;
+        details.append(name);
+      }
+      for (const index of indices) {
+        const link = button(sectionLabel(item.sections[index]), () => jump(index), 'secondary');
+        if (section === index) link.setAttribute('aria-current', 'true');
+        list.append(link);
+      }
+      details.append(list);
+    }
+    card.insertAdjacentElement('afterend', details);
+  }
+
+  function addFooter(item, groups, stage) {
+    const footer = document.createElement('div');
+    footer.className = 'guide-footer';
+    if (stage < 0) {
+      const previous = state.reading?.id === id(item) ? state.reading.section : undefined;
+      const primary = groups.flat();
+      footer.append(button('← Về bài học', () => jump(primary.includes(previous) ? previous : primary[0]), 'secondary'));
+    } else {
+      const primary = groups.flat();
+      const position = primary.indexOf(section);
+      const previous = button('← Mục trước', () => jump(primary[position - 1]), 'secondary');
+      previous.disabled = position === 0;
+      const count = document.createElement('span');
+      count.className = 'guide-count';
+      count.textContent = 'Bước ' + (stage + 1) + ' / ' + labels.length;
+      const upcoming = primary[position + 1];
+      const upcomingStage = groups.findIndex(group => group.includes(upcoming));
+      const nextLabel = upcoming === undefined ? 'Cuối bài' :
+        upcomingStage === stage ? 'Mục tiếp →' : labels[upcomingStage] + ' →';
+      const next = button(nextLabel, () => jump(upcoming));
+      next.disabled = upcoming === undefined;
+      footer.append(previous, count, next);
+      if (next.disabled && current + 1 < items.length) {
+        const panel = document.createElement('section');
+        panel.className = 'guide-end-lesson';
+        const index = current + 1;
+        panel.append(button('Bài tiếp theo · ' + items[index].title, () => open(index)));
+        root.append(panel);
+      }
+    }
+    document.body.append(footer);
+  }
+
+  function addPracticeLab(item, card) {
+    if (!C) return;
+    const topic = item.title + ' ' + item.weekTitle;
+    let target;
+    if (/\b(sql|postgres|database|join|constraint|query)\b/i.test(topic)) {
+      target = ['lab.html#sql', 'Thử trong phòng SQL'];
+    } else if (/\b(python|pytest)\b/i.test(topic)) {
+      target = ['lab.html#python', 'Thử trong phòng Python'];
+    } else if (/\b(api|http|rest|postman|newman|fastapi|endpoint)\b/i.test(topic)) {
+      target = ['lab.html#api', 'Thử API giả lập'];
+    } else if (!item.studyFlow && /watchlist|stock dashboard|tourism platform|react|javascript|frontend/i.test(topic)) {
+      target = ['product-demo.html', 'Mở demo sản phẩm'];
+    }
+    if (!target) return;
+    const link = document.createElement('a');
+    link.href = './' + target[0];
+    link.textContent = target[1];
+    link.className = 'guide-lab-link';
+    card.append(link);
+  }
+
+  function lessonView() {
+    const item = items[current];
+    const value = item?.sections[section];
+    const legacyNav = root.querySelector('.card > .navdays, .card > .lesson-nav');
+    if (!value || !legacyNav) return;
+    const card = legacyNav.parentElement;
+    const groups = order(item);
+    const stage = groups.findIndex(group => group.includes(section));
+    document.body.classList.add('guided-lesson', 'reading-mode');
+
+    const hero = document.createElement('section');
+    hero.className = 'guide-lesson-hero';
+    hero.innerHTML = '<div class="guide-lesson-meta"><span class="guide-eyebrow">Bài ' +
+      (current + 1) + ' / ' + items.length + '</span></div><h2>' + e(item.title) + '</h2>';
+    hero.firstElementChild.append(button(C ? 'Về tuần ' + item.week : 'Danh sách bài', () => {
+      if (C) weekView(item.week);
+      else home();
+    }, 'guide-back'));
+
+    const steps = document.createElement('nav');
+    steps.className = 'guide-steps';
+    steps.setAttribute('aria-label', 'Các bước trong bài');
+    labels.forEach((label, index) => {
+      const step = button('', () => jump(groups[index][0]), 'guide-step');
+      step.innerHTML = '<span>' + (index + 1) + '</span><strong>' + e(label) + '</strong>';
+      step.disabled = !groups[index].length;
+      if (index === stage) step.setAttribute('aria-current', 'step');
+      steps.append(step);
+    });
+    hero.append(steps);
+
+    if (stage >= 0) {
+      state.reading = { id: id(item), index: current, section };
+      save();
+      if (groups[stage].length > 1) {
+        const nav = document.createElement('nav');
+        nav.className = 'guide-section-nav';
+        nav.setAttribute('aria-label', 'Các mục trong bước ' + labels[stage]);
+        for (const index of groups[stage]) {
+          const link = button(sectionLabel(item.sections[index]), () => jump(index), 'secondary');
+          if (section === index) link.setAttribute('aria-current', 'true');
+          nav.append(link);
+        }
+        hero.append(nav);
+      }
+    }
+
+    if (root.firstElementChild?.matches('.row, .controls')) root.firstElementChild.remove();
+    root.prepend(hero);
+    legacyNav.remove();
+    card.querySelector('.lp-inline-actions')?.remove();
+    const sectionHeading = C ? card.querySelector(':scope > h3') : card.querySelectorAll(':scope > h2')[1];
+    card.querySelector(':scope > h2')?.remove();
+    card.querySelectorAll(':scope > .eyebrow').forEach(element => element.remove());
+    const heading = document.createElement('h3');
+    heading.className = 'guide-section-heading';
+    heading.tabIndex = -1;
+    heading.textContent = sectionLabel(value);
+    sectionHeading?.remove();
+    if (stage < 0) {
+      const badge = document.createElement('p');
+      badge.className = 'guide-eyebrow';
+      badge.textContent = 'Tài liệu bổ sung';
+      card.prepend(badge);
+      badge.after(heading);
+    } else {
+      card.prepend(heading);
+    }
+
+    if (value.sampleText && 'speechSynthesis' in window) {
+      card.append(button('Nghe câu mẫu', () => say(value.sampleText), 'secondary guide-listen'));
+    }
+    if (stage === 3) addPracticeLab(item, card);
+    if (stage === 4 && section === groups[4].at(-1)) {
+      const tools = document.createElement('details');
+      tools.className = 'guide-resources';
+      tools.innerHTML = '<summary>Ôn thêm theo nhóm chủ đề</summary>';
+      tools.append(button('Mở quiz kiến thức nền', () => window.LearningPlus?.quizView?.(item), 'secondary'));
+      card.append(tools);
+    }
+    if (stage < 0) {
+      const text = value.blocks.map(block => block.text || '').join(' ');
+      const url = text.match(/https:\/\/(?:docs\.python\.org|developer\.mozilla\.org|git-scm\.com|www\.postgresql\.org|fastapi\.tiangolo\.com|react\.dev|docs\.docker\.com|platform\.openai\.com|api-security\.owasp\.org)\/[^\s;]+/i)?.[0];
+      if (url) {
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = 'Mở tài liệu tham khảo';
+        link.className = 'guide-lab-link';
+        card.append(link);
+      }
+    }
+
+    const complete = root.querySelector('#done, #completed')?.closest('.card');
+    if (complete) {
+      complete.hidden = stage !== 4;
+      if (C) complete.querySelector('.row')?.remove();
+    }
+    resources(item, groups.flat(), card);
+    addFooter(item, groups, stage);
+    heading.focus({ preventScroll: true });
+    hero.scrollIntoView({ block: 'start' });
+  }
+
+  function cleanLesson() {
+    document.querySelector('body > .guide-footer')?.remove();
+    document.body.classList.remove('guided-lesson', 'reading-mode');
+    if (!C) {
+      if (recorder?.state === 'recording') recorder.stop();
+      const recording = root.querySelector('#playback')?.getAttribute('src');
+      if (recording) URL.revokeObjectURL(recording);
+    }
+  }
+
+  function topNav() {
+    const nav = document.querySelector('header nav');
+    if (!nav || nav.querySelector('.guide-mainnav')) return;
+    const extras = document.createElement('details');
+    extras.className = 'guide-extras';
+    extras.innerHTML = '<summary>Thêm công cụ</summary>';
+    const contents = document.createElement('div');
+    contents.className = 'guide-extra-content';
+    contents.addEventListener('click', event => {
+      if (!event.target.closest('button, a')) return;
+      extras.open = false;
+      cleanLesson();
+    }, true);
+    while (nav.firstChild) contents.append(nav.firstChild);
+    extras.append(contents);
+    const basic = document.createElement('div');
+    basic.className = 'guide-mainnav';
+    basic.append(
+      button('Khóa học', () => home()),
+      button('Học tiếp', resume),
+      button('Làm bài', () => {
+        const index = items.findIndex(item => id(item) === state.reading?.id);
+        const target = Math.max(index, 0);
+        open(target, order(items[target])[3][0]);
+      }),
+      button('Ôn tập', () => { cleanLesson(); window.LearningPlus?.srsView?.(); })
+    );
+    nav.append(basic, extras);
+  }
+
+  function firstSection(item, target) {
+    if (Number.isInteger(target) && item.sections[target]) return target;
+    return order(item).flat()[0] ?? 0;
+  }
+
+  const originalHome = home;
+  home = function () { cleanLesson(); originalHome(); showLanding(); };
+  const originalNotes = notes;
+  notes = function () { cleanLesson(); return originalNotes(); };
+  const originalProgress = progressView;
+  progressView = function () { cleanLesson(); return originalProgress(); };
+
+  if (C) {
+    const originalWeek = weekView;
+    weekView = function (index) { cleanLesson(); return originalWeek(index); };
+    const originalOverview = overview;
+    overview = function () { cleanLesson(); return originalOverview(); };
+    const originalOpen = openDay;
+    openDay = function (lessonId, target) {
+      const item = items.find(item => item.id === lessonId);
+      if (item) return originalOpen(lessonId, firstSection(item, target));
+    };
+    const originalRender = renderDay;
+    renderDay = function () { cleanLesson(); originalRender(); lessonView(); };
+  } else {
+    const originalPlan = plan;
+    plan = function () { cleanLesson(); return originalPlan(); };
+    const originalReviews = reviews;
+    reviews = function () { cleanLesson(); return originalReviews(); };
+    const originalErrors = errors;
+    errors = function () { cleanLesson(); return originalErrors(); };
+    const originalOpen = openLesson;
+    openLesson = function (index, target) {
+      if (items[index]) return originalOpen(index, firstSection(items[index], target));
+    };
+    const originalRender = renderLesson;
+    renderLesson = function () { cleanLesson(); originalRender(); lessonView(); };
+  }
+
+  window.GuidedStudy = { order, hasExercises };
+  topNav();
+  home();
 })();
