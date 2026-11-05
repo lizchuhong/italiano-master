@@ -85,7 +85,9 @@ function trustedSource(item,s){
 function cleanSection(s){return s.title.replace(/^\d+\.\s*/, '').replace(/^([A-E])\.\s*/, '')}
 function related(item,groups){
  const concept=groups[1],examples=groups[2];
- const picks=[...concept.slice(0,3),...examples.slice(0,2)];
+ const taught=concept.filter(i=>/Học trước khi làm/i.test(item.sections[i].title));
+ const manual=concept.filter(i=>/giáo trình Banking gốc|Grammatica|Concept explanation|Beginner Deep Dive|từ số 0/i.test(item.sections[i].title));
+ const picks=[...taught,...manual.slice(0,2),...examples.slice(0,2),...concept.slice(0,2)];
  return [...new Set(picks)].filter(i=>i!==section).slice(0,5);
 }
 function lessonView(){
