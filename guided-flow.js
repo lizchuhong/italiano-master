@@ -178,7 +178,7 @@ function topNav(){
  function navBtn(text,cb){const b=document.createElement('button');b.textContent=text;b.addEventListener('click',cb);basic.append(b)}
  navBtn('🏠 Khóa học',()=>home());
  navBtn('▶ Học tiếp',()=>{const i=items.findIndex(x=>id(x)===state.reading?.id);open(i>=0?i:0)});
- navBtn('✍ Làm bài',()=>{const item=get()||items[0];const groups=order(item);const i=groups[3][0]??0;if(C)openDay(item.id,i);else openLesson(items.indexOf(item),i)});
+ navBtn('✍ Làm bài',()=>{const saved=items.findIndex(x=>id(x)===state.reading?.id);const item=items[saved>=0?saved:current]||items[0];const groups=order(item);const i=groups[3][0]??0;if(C)openDay(item.id,i);else openLesson(items.indexOf(item),i)});
  navBtn('🔁 Ôn tập',()=>window.LearningPlus?.srsView?.());
  nav.append(basic,extras);
 }
