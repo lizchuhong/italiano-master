@@ -82,6 +82,20 @@
         textNodes[k].insertAdjacentElement('afterend',group);
       });
     }
+    // Preserve access to answers from the earlier generic three-question interface.
+    if(total>0){
+      const prefix='extra:'+getId()+':s'+section+':';
+      const oldKeys=Object.keys(state.answers||{}).filter(k=>k.startsWith(prefix)&&state.answers[k]?.text);
+      if(oldKeys.length){
+        const archive=document.createElement('details');
+        archive.className='optional-notes';
+        archive.innerHTML='<summary>🗂 Bài làm cũ đã lưu trước khi chia câu hỏi</summary><p class="muted">Giữ nguyên câu trả lời cũ để bạn xem và sao chép; các ô mới có mã lưu riêng.</p>';
+        oldKeys.sort().forEach((key,i)=>{
+          archive.append(buildAnswer(key,i+1,'Bài làm cũ '+(i+1)));
+        });
+        card.append(archive);
+      }
+    }
     if(!total&&isExercise){
       const prompts=codeApp?[
         'Giải thích khái niệm chính của '+item.title+' và đưa một ví dụ đầu vào/đầu ra.',
@@ -166,6 +180,22 @@
     banner.querySelector('button').addEventListener('click',()=>{if(codeApp)openDay(item.id,Math.min(r.section,item.sections.length-1));else openLesson(r.index,Math.min(r.section,item.sections.length-1))});
     root.insertAdjacentElement('afterbegin',banner);
   }
+ 
+  const oldPlan=plan;plan=function(){document.body.classList.remove('reading-mode');return oldPlan()};
+  const oldReviews=reviews;reviews=function(){document.body.classList.remove('reading-mode');return oldReviews()};
+  const oldErrors=errors;errors=function(){document.body.classList.remove('reading-mode');return oldErrors()};
+  const oldNotes=notes;notes=function(){
+    document.body.classList.remove('reading-mode');oldNotes();
+    const oldEntries=Object.entries(state.notes||{}).filter(([key,v])=>/^lesson-(?:1[9]|2\\d|3[0-8])-\\d+$/.test(key)&&String(v||'').trim());
+    if(oldEntries.length){
+      const detail=document.createElement('details');detail.className='optional-notes';
+      detail.innerHTML='<summary>📚 Ghi chú theo số bài cũ 19–38 ('+oldEntries.length+' mục)</summary><p class="muted">Trước đây các bài tháng 11–12 có số trùng 19–38. Không thể tự biết ghi chú thuộc bài nào; hãy kiểm tra và sao chép khi cần. Không dữ liệu nào bị xóa.</p>';
+      for(const [key,value] of oldEntries){const label=document.createElement('label');label.textContent=key;const input=document.createElement('textarea');input.readOnly=true;input.value=String(value);detail.append(label,input)}
+      root.append(detail);
+    }
+  };
+  const oldProgressView=progressView;progressView=function(){document.body.classList.remove('reading-mode');return oldProgressView()};
+
   const originalHome=home;
   home=function(){originalHome();resumeHome()};
   if(codeApp){
