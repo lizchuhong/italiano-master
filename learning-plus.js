@@ -202,7 +202,7 @@ const projects=[
 ['Deployment & FDE','Staging, CI, monitoring, runbook, demo, tài liệu vận hành và bàn giao sản phẩm.']
 ]}];
 function capstones(){
- page('<h2>Hai dự án tốt nghiệp · theo dõi bằng minh chứng</h2><p class="lp-muted">Mỗi mốc là một sản phẩm nhỏ có kiểm thử hoặc tài liệu. Đánh dấu hoàn thành do bạn tự xác nhận; không tự sinh code hay xác nhận đã deploy.</p><div id="lp-capstones"></div>');
+ page('<h2>Hai dự án tốt nghiệp · theo dõi bằng minh chứng</h2><p class="lp-muted">Mỗi mốc là một sản phẩm nhỏ có kiểm thử hoặc tài liệu. Đánh dấu hoàn thành do bạn tự xác nhận; không tự sinh code hay xác nhận đã deploy.</p><p><a href="https://lizchuhong.github.io/code-master-academy/product-demo.html" target="_blank" rel="noopener noreferrer">Mở bản demo tương tác AI Tourism và AI Stock (dữ liệu giả lập)</a></p><div id="lp-capstones"></div>');
  const container=qs('#lp-capstones');
  projects.forEach(p=>{
   const done=p.phases.filter((_,i)=>state.lpMilestones[p.key+'-'+i]).length;
