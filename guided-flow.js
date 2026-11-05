@@ -26,7 +26,9 @@ const open=i=>{if(i<0||i>=items.length)return;C?openDay(items[i].id):openLesson(
 function showLanding(){
  document.body.classList.remove('guided-lesson','reading-mode');
  const pulse=root.querySelector('.lp-home-pulse');
- if(pulse){pulse.remove();root.insertBefore(pulse,root.firstChild)}
+ root.querySelectorAll('.resume-banner').forEach(b=>b.remove());
+ root.querySelector(':scope > h2')?.remove();
+ if(pulse)pulse.remove();
  const intro=document.createElement('section');intro.className='guide-intro';intro.innerHTML='<span class="guide-eyebrow">HỌC THEO TỪNG BƯỚC</span><h2>Học gì hôm nay?</h2><p>① Mở bài → ② Đọc kiến thức → ③ Xem mẫu → ④ Làm từng câu → ⑤ Đối chiếu và ôn.</p>';
  const actions=document.createElement('div');actions.className='guide-row';
  const btn=(t,fn)=>{const b=document.createElement('button');b.textContent=t;b.addEventListener('click',fn);actions.append(b)};
@@ -35,6 +37,11 @@ function showLanding(){
  btn('✍ Bắt đầu từ bài đầu',()=>open(0));
  intro.append(actions);
  root.prepend(intro);
+ if(pulse){
+   const stats=document.createElement('details');stats.className='guide-overview';
+   stats.innerHTML='<summary>📊 Xem tiến độ, thẻ ôn và dự án</summary>';
+   stats.append(pulse);intro.insertAdjacentElement('afterend',stats);
+ }
  const allGrid=root.querySelector(':scope > .grid');
  if(allGrid){
   const nodes=[...allGrid.children];
