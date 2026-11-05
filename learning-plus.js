@@ -14,7 +14,7 @@ const unlock =()=>{document.body.classList.remove('reading-mode');};
 const panel=(title,body)=>'<section class="lp-panel"><h2>'+title+'</h2>'+body+'</section>';
 const button=(text,fn,cls='')=>{const b=document.createElement('button');b.textContent=text;b.className=cls;b.addEventListener('click',fn);return b};
 function sync(){try{save()}catch(e){alert('Bộ nhớ thiết bị đầy hoặc bị chặn. Hãy sao lưu dữ liệu trước khi tiếp tục. '+e.message)}}
-function page(markup){unlock();root.innerHTML='<div class="lp-page">'+markup+'</div>';root.scrollIntoView({block:'start'})}
+function page(markup){unlock();document.body.classList.remove('guided-lesson');document.querySelectorAll('body > .guide-footer').forEach(f=>f.remove());root.innerHTML='<div class="lp-page">'+markup+'</div>';root.scrollIntoView({block:'start'})}
 const L=(c,sub)=>({c,sub});
 const quizBank={
 qa:[
@@ -75,7 +75,7 @@ function quizQuestions(item){
 }
 function quizView(item=items[current]){
  const key=labelItem(item),questions=quizQuestions(item);
- page('<h2>Kiểm tra kiến thức nền</h2><p class="lp-muted"><strong>'+E(item.title)+'</strong> — 3 câu trắc nghiệm chấm tự động bằng đáp án cố định. Đây chỉ là kiểm tra kiến thức nền, không thay thế đánh giá code hoặc bài viết.</p><div id="lp-quiz"></div>');
+ page('<h2>Quiz kiến thức nền theo NHÓM chủ đề</h2><p class="lp-muted">Bộ 3 câu cố định của nhóm học: '+E(category(item))+'. <strong>Không phải bài kiểm tra riêng cho '+E(item.title)+'</strong>. Muốn đối chiếu bài hiện tại, dùng bước “Đối chiếu” trong bài học. Điểm quiz chỉ thể hiện nhớ kiến thức nền, không đánh giá bài viết, code hoặc kỹ năng nghề.</p><div id="lp-quiz"></div>');
  const target=qs('#lp-quiz');
  questions.forEach((q,i)=>{const section=document.createElement('section');section.className='lp-panel';const h=document.createElement('h3');h.textContent=(i+1)+'. '+q.q;section.append(h);
  q.options.forEach((opt,j)=>{const label=document.createElement('label');label.className='lp-option';const inp=document.createElement('input');inp.type='radio';inp.name='lp-q'+i;inp.value=j;label.append(inp,document.createTextNode(' '+opt));section.append(label)});target.append(section)});
@@ -132,7 +132,7 @@ function srsView(){
 function annotateCurrent(){
  const item=items[current];if(!item)return;
  const id=labelItem(item);const buttonRow=document.createElement('div');buttonRow.className='lp-row lp-inline-actions';
- buttonRow.append(button('Kiểm tra 3 câu',()=>quizView(item),'secondary'),button('Ôn thẻ bài này',()=>{srsView()},'secondary'));
+ buttonRow.append(button('Quiz nhóm chủ đề',()=>quizView(item),'secondary'),button('Ôn thẻ bài này',()=>{srsView()},'secondary'));
  const target=root.querySelector('.card .navdays,.card .lesson-nav');
  if(target)target.insertAdjacentElement('beforebegin',buttonRow);
  // Offer a transparent feedback check for free-text answers.
@@ -153,9 +153,7 @@ function annotateCurrent(){
     if(!txt){out.textContent='Hãy nhập câu trả lời trước khi kiểm tra.'}
     else{
       // Unambiguous answers from the original Italian lesson 1 grammar drill.
-      const exact=!C&&item.number===1&&section===8&&i<5?['sono','chiamo','abbiamo','ha','sta'][i]:null;
-      if(exact){const norm=s=>s.toLocaleLowerCase('it').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[.,!?\s]/g,'').trim();const ok=norm(txt)===norm(exact);out.innerHTML='<strong>'+(ok?'✓ Đúng':'Cần sửa')+'</strong> — Đáp án: '+E(exact)+'. '+(ok?'Bạn đã chọn đúng dạng từ.':'Xem lại chủ ngữ và động từ trong ví dụ.') }
-      else out.innerHTML='<strong>Phản hồi theo checklist (không phải chấm AI)</strong><p>'+E('Độ dài: '+txt.length+' ký tự. '+(txt.length<20?'Câu trả lời có thể quá ngắn; hãy bổ sung dẫn chứng hoặc ví dụ.':'Đã có nội dung; hãy đối chiếu từng tiêu chí.'))+'</p><ul>'+explain.map(x=>'<li>'+E(x)+'</li>').join('')+'</ul><p>Đối chiếu phần đáp án mẫu, sửa lại và nộp lại. Không thể xác nhận đúng/sai tự động với câu hỏi mở.</p>';
+      out.innerHTML='<strong>Checklist tự đối chiếu — chưa chấm tự động</strong><p>'+E('Đã nhập '+txt.length+' ký tự. Hãy đối chiếu từng yêu cầu với phần Đối chiếu/đáp án của chính bài này, không dùng độ dài để kết luận đúng sai.')+'</p><ul>'+explain.map(x=>'<li>'+E(x)+'</li>').join('')+'</ul><p>Nếu không đủ dữ kiện để xác nhận, ghi rõ “cần kiểm tra nguồn” thay vì đoán. Bạn có thể sửa và nộp lại.</p>';
     }
     if(!out.parentNode)div.append(out)
   },'secondary lp-check');
