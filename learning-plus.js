@@ -126,7 +126,7 @@ function srsView(){
  const intervals=[1,3,7,14,30];
  ready.forEach(card=>{const wrap=document.createElement('section');wrap.className='lp-panel';wrap.innerHTML='<small>'+E(card.title)+'</small><h3>'+E(card.front)+'</h3>';const back=document.createElement('div');back.className='lp-answer';back.textContent=card.back;back.hidden=true;wrap.append(button('Lật thẻ / xem lời giải',()=>{back.hidden=!back.hidden},'secondary'),back);
  const row=document.createElement('div');row.className='lp-row';
- for(const [txt,pass] of [['Quên',false],['Nhớ',true]])row.append(button(txt,()=>{const old=state.lpReview[card.id]||{level:-1};const lvl=pass?Math.min((old.level||0)+1,4):0;state.lpReview[card.id]={level:lvl,due:dayAfter(pass?intervals[lvl]:1),last:today()};sync();wrap.remove()},pass?'':'secondary'));
+ for(const [txt,pass] of [['Quên',false],['Nhớ',true]])row.append(button(txt,()=>{const old=state.lpReview[card.id]||{level:-1};const lvl=pass?Math.min((Number.isInteger(old.level)?old.level:-1)+1,4):0;state.lpReview[card.id]={level:lvl,due:dayAfter(pass?intervals[lvl]:1),last:today()};sync();wrap.remove()},pass?'':'secondary'));
  wrap.append(row);area.append(wrap)});
 }
 function annotateCurrent(){
