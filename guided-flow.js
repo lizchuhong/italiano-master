@@ -131,6 +131,11 @@ function lessonView(){
  const [origin,warning]=trustedSource(item,item.sections[section]);
  map.innerHTML='<strong>'+esc(origin)+'</strong><p>'+esc(warning)+'</p>';
  hero.append(map);
+ if(stage===4){
+   const reviewTools=document.createElement('details');reviewTools.className='guide-outline';
+   reviewTools.innerHTML='<summary>Quiz 3 câu nền tảng của nhóm học (khác bài tập đang học)</summary><p>Chỉ dùng để tự ôn khái niệm chung. Không thay thế đáp án và bài tập của bài hiện tại.</p>';
+   const btn=document.createElement('button');btn.className='secondary';btn.textContent='Mở quiz kiến thức nền';btn.addEventListener('click',()=>window.LearningPlus?.quizView?.(item));reviewTools.append(btn);hero.append(reviewTools);
+ }
  // Show knowledge links before exercise. Do not claim every existing exercise is solvable if it isn't.
  if(stage===3){
   const prep=document.createElement('div');prep.className='guide-prereq';
