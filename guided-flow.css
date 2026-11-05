@@ -92,3 +92,10 @@ body.guided-lesson .lp-inline-actions button:first-child{color:var(--ux-ink);bac
  body>.guide-footer .guide-count{font-size:.73rem}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}}
+
+.guide-overview{border:1px solid var(--gd-line);border-radius:12px;background:var(--ux-panel);margin:12px 0;padding:8px 12px}
+.guide-overview>summary{cursor:pointer;font-weight:700;padding:8px 4px}
+.guide-overview>.lp-home-pulse{margin:8px 0 4px;border:0;box-shadow:none;padding:10px}
+.guide-reference-link,.guide-lab-link{display:inline-flex;align-items:center;min-height:42px;margin:12px 0;padding:9px 13px;border-radius:9px;border:1px solid var(--gd-line);background:var(--ux-soft);color:var(--gd-accent);font-weight:750;font-size:.85rem;text-decoration:none;overflow-wrap:anywhere}
+.guide-lab-link{margin-top:12px}
+.guide-reference-link:hover,.guide-lab-link:hover{text-decoration:underline}
