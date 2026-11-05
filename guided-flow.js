@@ -9,6 +9,7 @@ const labels=['Bắt đầu','Học kiến thức','Xem ví dụ','Làm bài','�
 const help=['Mục tiêu và cách học','Đọc các khái niệm cần thiết','Quan sát cách giải từng bước','Viết lời giải ngay dưới câu hỏi','So sánh, tự sửa và kết thúc'];
 function kind(title){
  const s=String(title).toLowerCase();
+ if(/học trước khi làm bài|học trước khi làm fde|nội dung giáo trình banking gốc/i.test(s))return 1;
  if(/answer key|risposte|soluzioni|đáp án|lời giải|tự đánh giá|autovalutazione|check understanding|definition of done|review schedule|error log|dialogo modello|model dialogue|kiểm tra kết quả|tiêu chí đạt/i.test(s))return 4;
  if(/exercise|esercizi|homework|luyện|thực hành|lab|speaking|role.play|role-play|produzione|bài tập|portfolio|hybrid practice|output bắt buộc|debugging|testing exercise|qa-first questions|luận bài/i.test(s))return 3;
  if(/example|esempio|ví dụ|scenario|model|reading|copywriting|hội thoại mẫu|c\. ví dụ/i.test(s))return 2;
@@ -63,7 +64,7 @@ function showLanding(){
   input.addEventListener('input',()=>{
    const v=input.value.toLocaleLowerCase('vi').trim();results.innerHTML='';
    if(v.length<2)return;
-   const matches=items.map((x,i)=>({x,i})).filter(({x})=>x.title.toLocaleLowerCase('vi').includes(v)).slice(0,20);
+   const matches=items.map((x,i)=>({x,i})).filter(({x,i})=>(x.title+' '+(i+1)+' '+id(x)+' bài '+(i+1)).toLocaleLowerCase('vi').includes(v)).slice(0,20);
    matches.forEach(({x,i})=>{const b=document.createElement('button');b.className='guide-result';b.textContent=(i+1)+'. '+x.title;b.addEventListener('click',()=>open(i));results.append(b)});
    if(!matches.length)results.textContent='Không thấy tên bài phù hợp. Thử từ khóa khác.';
   });
@@ -113,6 +114,12 @@ function lessonView(){
  select.addEventListener('change',()=>jump(Number(select.value)));
  const label=document.createElement('label');label.textContent='Mục hiện tại:';
  top.append(label,select);hero.append(top);
+ const sourceSection=item.sections.find(x=>/^Học trước khi làm/i.test(x.title));
+ if(sourceSection){
+   const allText=(sourceSection.blocks||[]).map(b=>b.text||'').join(' ');
+   const url=allText.match(/https:\/\/(?:docs\.python\.org|developer\.mozilla\.org|git-scm\.com|www\.postgresql\.org|fastapi\.tiangolo\.com|react\.dev|docs\.docker\.com|platform\.openai\.com|www\.treccani\.it|api-security\.owasp\.org)\/[^\s;]+/i)?.[0];
+   if(url){const ref=document.createElement('a');ref.href=url;ref.target='_blank';ref.rel='noopener noreferrer';ref.className='guide-reference-link';ref.textContent='↗ Mở tài liệu chính thức để đối chiếu';hero.append(ref)}
+ }
  const map=document.createElement('div');map.className='guide-source';
  const [origin,warning]=trustedSource(item,item.sections[section]);
  map.innerHTML='<strong>'+esc(origin)+'</strong><p>'+esc(warning)+'</p>';
@@ -135,7 +142,7 @@ function lessonView(){
   nav.classList.add('guide-toc-list');
  }
  const source=card.querySelector('h2');if(source)source.classList.add('guide-old-heading');
- const otherAction=card.querySelector('.lp-inline-actions');if(otherAction){const quiz=otherAction.querySelector('button');if(quiz)quiz.textContent='Quiz kiến thức nền (không riêng bài này)'}
+ const otherAction=card.querySelector('.lp-inline-actions');if(otherAction)otherAction.remove();
  const inserted=card.previousElementSibling;
  if(inserted&&inserted.classList.contains('row'))inserted.insertAdjacentElement('afterend',hero);
  else card.insertAdjacentElement('beforebegin',hero);
