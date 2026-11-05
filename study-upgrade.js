@@ -186,7 +186,7 @@
   const oldErrors=errors;errors=function(){document.body.classList.remove('reading-mode');return oldErrors()};
   const oldNotes=notes;notes=function(){
     document.body.classList.remove('reading-mode');oldNotes();
-    const oldEntries=Object.entries(state.notes||{}).filter(([key,v])=>/^lesson-(?:1[9]|2\\d|3[0-8])-\\d+$/.test(key)&&String(v||'').trim());
+    const oldEntries=Object.entries(state.notes||{}).filter(([key,v])=>/^lesson-(?:1[9]|2\d|3[0-8])-\d+$/.test(key)&&String(v||'').trim());
     if(oldEntries.length){
       const detail=document.createElement('details');detail.className='optional-notes';
       detail.innerHTML='<summary>📚 Ghi chú theo số bài cũ 19–38 ('+oldEntries.length+' mục)</summary><p class="muted">Trước đây các bài tháng 11–12 có số trùng 19–38. Không thể tự biết ghi chú thuộc bài nào; hãy kiểm tra và sao chép khi cần. Không dữ liệu nào bị xóa.</p>';
