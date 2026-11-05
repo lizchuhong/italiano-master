@@ -35,17 +35,54 @@
   }
   function addQuestions(card,item,sec){
     const blocks=sec.blocks||[];
-    const entries=blocks.map((b,i)=>({b,i})).filter(({b})=>b.type==='number'||b.type==='List Number');
-    const nodes=[...card.querySelectorAll(':scope > .number')];
-    const exercise=/(bài tập|thực hành|homework|esercizi|exercise|lab|speaking|role.play|writing|reading|question|luyện|kiểm tra|test|portfolio|pratica|d\. luyện)/i.test(sec.title);
+    const isExercise=/(bài tập|thực hành|homework|esercizi|exercises?|exercise|lab|speaking|role.play|writing|reading|question|luyện|kiểm tra|test|portfolio|pratica|produzione|output|debugging)/i.test(sec.title);
     let total=0;
-    for(let k=0;k<Math.min(nodes.length,entries.length,18);k++){
-      const {b,i}=entries[k];
-      if(!exercise&&!/(\?|hãy|viết|tạo|lập|thử|giải|mô tả|so sánh|nêu|dịch|scrivi|completa|rispondi|crea|calcola|câu \d)/i.test(b.text||''))continue;
+    const bulletTypes=new Set(['number','List Number','bullet','List Bullet']);
+    const bulletEntries=blocks.map((b,i)=>({b,i})).filter(({b})=>bulletTypes.has(b.type));
+    const bulletNodes=[...card.querySelectorAll(':scope > .number, :scope > .bullet')];
+    bulletEntries.forEach(({b,i},k)=>{
+      if(total>=24||!bulletNodes[k])return;
+      if(!isExercise&&!/(\?|hãy|viết|tạo|lập|thử|giải|mô tả|so sánh|nêu|dịch|scrivi|completa|rispondi|crea|calcola|câu \d|interview)/i.test(b.text||''))return;
+      if(/https?:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(b.text||''))return;
       const key='q:'+getId()+':s'+section+':b'+i;
-      nodes[k].insertAdjacentElement('afterend',buildAnswer(key,++total,b.text));
+      bulletNodes[k].insertAdjacentElement('afterend',buildAnswer(key,++total,b.text));
+    });
+    // Some original coursebook questions are compressed into one text block:
+    // "1) ... 2) ... 3) ...". Split them into separately saved answers.
+    if(isExercise){
+      const textEntries=blocks.map((b,i)=>({b,i})).filter(({b})=>['text','Normal','Paragraph'].includes(b.type));
+      const textNodes=[...card.querySelectorAll(':scope > .block')];
+      textEntries.forEach(({b,i},k)=>{
+        if(total>=35||!textNodes[k])return;
+        const source=String(b.text||'').trim();
+        if(!source||source.length>1400)return;
+        const matches=[...source.matchAll(/(?:^|\s)(\d{1,2})\)\s*/g)];
+        const prompts=[];
+        if(matches.length>=2){
+          for(let j=0;j<matches.length;j++){
+            const a=matches[j].index+matches[j][0].length;
+            const z=j+1<matches.length?matches[j+1].index:source.length;
+            const q=source.slice(a,z).trim();
+            if(q)prompts.push({code:'p'+j,prompt:q});
+          }
+        }else if(!matches.length&&source.length<=420&&!/^(ví dụ|example|gợi ý|solution|đáp án)/i.test(source)){
+          prompts.push({code:'p0',prompt:source});
+        }
+        if(!prompts.length)return;
+        const group=document.createElement('div');group.className='practice-panel';
+        group.innerHTML='<strong>Làm lần lượt từng câu trong đoạn trên</strong>';
+        prompts.slice(0,15).forEach(({code,prompt})=>{
+          if(total>=35)return;
+          const iQuestion=++total;
+          const t=document.createElement('div');t.className='question-prompt';
+          t.textContent=iQuestion+'. '+prompt;
+          group.append(t);
+          group.append(buildAnswer('q:'+getId()+':s'+section+':b'+i+':'+code,iQuestion,prompt));
+        });
+        textNodes[k].insertAdjacentElement('afterend',group);
+      });
     }
-    if(!total&&exercise){
+    if(!total&&isExercise){
       const prompts=codeApp?[
         'Giải thích khái niệm chính của '+item.title+' và đưa một ví dụ đầu vào/đầu ra.',
         'Thực hiện một ví dụ thực tế trong AI Tourism hoặc AI Stock với dữ liệu mẫu.',
@@ -57,7 +94,10 @@
       ];
       const wrapper=document.createElement('div');wrapper.className='practice-panel';
       wrapper.innerHTML='<h3>Thực hành bổ sung • từng câu</h3><p class="muted">Bài tập mở rộng; không thay thế bài trong giáo trình.</p>';
-      prompts.forEach((q,i)=>{let t=document.createElement('div');t.className='question-prompt';t.textContent=(i+1)+'. '+q;wrapper.append(t);wrapper.append(buildAnswer('extra:'+getId()+':s'+section+':q'+i,i+1,q))});
+      prompts.forEach((q,i)=>{
+        const t=document.createElement('div');t.className='question-prompt';t.textContent=(i+1)+'. '+q;
+        wrapper.append(t);wrapper.append(buildAnswer('extra:'+getId()+':s'+section+':q'+i,i+1,q));
+      });
       card.append(wrapper);
     }
   }
