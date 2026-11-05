@@ -1,0 +1,57 @@
+:root{--ux-panel:#123626;--ux-soft:#193f2d;--ux-accent:#f4ce65;--ux-border:#3b664b;--ux-base:#061b15;--ux-ink:#f3f5e9;--ux-muted:#c7d7c4}
+
+/* Focused responsive reading mode */
+.reading-mode #root{padding-bottom:154px}
+.reading-mode #root>.card,.reading-mode #root>.row,.reading-mode #root>.controls,.reading-mode #root>.optional-notes{max-width:860px;margin-left:auto;margin-right:auto}
+.reading-mode #root>.card{padding:clamp(17px,3.4vw,30px)}
+.reading-mode .card h2{line-height:1.32;letter-spacing:-.015em}
+.reading-mode .card h3{line-height:1.4}
+.reading-mode .block,.reading-mode .bullet,.reading-mode .number{line-height:1.83}
+.reading-mode .number{border-left:3px solid var(--ux-accent);background:var(--ux-soft);padding:13px 16px 13px 22px;margin:18px 0 9px;border-radius:0 10px 10px 0}
+.reading-mode .bullet{margin:12px 0;padding-left:23px}
+.reading-mode .callout,.reading-mode .alert{border-left:4px solid var(--ux-accent);padding:14px 17px}
+.reading-mode .lesson-nav,.reading-mode .navdays{position:sticky;top:0;z-index:12;display:flex;flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;background:var(--ux-panel);border:1px solid var(--ux-border);border-radius:12px;padding:9px;gap:8px;margin:18px 0 20px;scrollbar-width:thin}
+.reading-mode .lesson-nav button,.reading-mode .navdays button{flex:0 0 auto;max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;scroll-snap-align:center}
+.reading-mode .lesson-nav .active,.reading-mode .navdays .active{background:var(--ux-accent)!important;color:#17251d!important;font-weight:750}
+.reading-highlight{background:var(--ux-soft);border-left:4px solid var(--ux-accent);border-radius:0 12px 12px 0;padding:13px 17px;margin:18px 0 22px}
+.reading-highlight strong{color:var(--ux-accent);font-weight:800;letter-spacing:.02em}
+.reading-highlight p{margin:6px 0 0;font-size:.98rem}
+.inline-answer{margin:8px 0 23px;padding:15px;background:var(--ux-panel);border:1px solid var(--ux-border);border-radius:14px}
+.inline-answer label{margin:0 0 10px;color:var(--ux-accent);font-weight:750}
+.inline-answer textarea{min-height:104px;resize:vertical;width:100%;font-size:16px;line-height:1.55;padding:12px}
+.answer-status{font-size:.78rem;font-weight:500;margin-left:8px;color:var(--ux-muted)}
+.answer-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}
+.answer-actions small{font-size:.8rem;color:var(--ux-muted)}
+.practice-panel{margin-top:22px;padding:16px;border:1px dashed var(--ux-accent);border-radius:12px}
+.question-prompt{padding:12px 0;font-weight:650;line-height:1.65}
+.learning-toolbar{position:fixed;bottom:0;left:0;right:0;z-index:100;background:var(--ux-panel);border-top:1px solid var(--ux-border);box-shadow:0 -10px 36px #0007;padding:9px clamp(10px,4vw,28px) max(11px,env(safe-area-inset-bottom))}
+.learning-progress{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:.78rem;font-weight:700;color:var(--ux-muted);max-width:1080px;margin:auto}
+.learning-progress span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.learning-progress span:last-child{white-space:nowrap}
+.learning-meter{max-width:1080px;margin:5px auto 8px;height:4px;border-radius:6px;background:var(--ux-border);overflow:hidden}
+.learning-meter>div{height:100%;background:var(--ux-accent)}
+.learning-actions{display:flex;max-width:1080px;align-items:center;margin:auto;gap:7px}
+.learning-actions button{flex:0 0 auto;min-height:40px;padding:8px 12px;white-space:nowrap;font-size:.85rem}
+.learning-actions button:disabled{opacity:.35;cursor:not-allowed}
+.learning-actions select{flex:1;min-width:0;width:auto;max-width:none;min-height:40px;background:var(--ux-base);border:1px solid var(--ux-border);color:var(--ux-ink);font:inherit;font-size:.85rem}
+.optional-notes{border:1px solid var(--ux-border);padding:12px 16px;border-radius:12px;margin:15px auto}
+.optional-notes>summary{cursor:pointer;font-weight:750;color:var(--ux-muted)}
+.optional-notes .card{margin:12px 0 0;box-shadow:none}
+.resume-banner{border:1px solid var(--ux-border);border-left:4px solid var(--ux-accent);background:var(--ux-panel);padding:16px;display:flex;gap:12px;align-items:center;justify-content:space-between;border-radius:12px;margin:16px 0}
+.resume-banner p{margin:4px 0 0;color:var(--ux-muted)}
+.resume-banner button{white-space:nowrap}
+.banking-shortcut{display:block;margin:12px 0}
+@media(max-width:600px){
+ .reading-mode #root{padding-bottom:165px}
+ .reading-mode #root>.card{padding:17px 14px}
+ .reading-mode .lesson-nav,.reading-mode .navdays{margin-left:-8px;margin-right:-8px;border-radius:10px}
+ .reading-mode .lesson-nav button,.reading-mode .navdays button{max-width:165px;font-size:.84rem;padding:9px 12px}
+ .reading-mode .card h2{font-size:1.3rem}
+ .learning-toolbar{padding:8px 8px max(9px,env(safe-area-inset-bottom))}
+ .learning-actions{gap:4px}
+ .learning-actions button{font-size:.75rem;min-height:42px;padding:8px 7px}
+ .learning-actions select{font-size:.76rem;min-width:62px;padding:8px 5px}
+ .inline-answer{padding:13px 11px;margin-bottom:18px}
+ .resume-banner{flex-wrap:wrap}
+}
+@media(prefers-reduced-motion:reduce){.reading-mode *{scroll-behavior:auto!important}}
