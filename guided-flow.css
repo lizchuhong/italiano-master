@@ -65,6 +65,8 @@ body[data-academy] :is(.callout, .alert, .pill, th) {
   color: var(--ink);
 }
 body[data-academy] :is(td, th) { border-color: var(--line); }
+body[data-academy] td { background: var(--paper); color: var(--ink); }
+body[data-academy] tr:nth-child(even) > td { background: var(--tint); }
 body[data-academy] :is(button, a.secondary, .study-primary) {
   min-height: 44px;
   border-radius: 9px;
