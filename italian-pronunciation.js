@@ -123,7 +123,7 @@
     return 'Chưa bắt đầu được bản ghi. Thử kiểm tra micro rồi thu lại.';
   }
 
-  function recorderPanel(lesson, { phrase, onTake } = {}) {
+  function recorderPanel(lesson, { phrase, onClip, onResult } = {}) {
     const guided = Boolean(phrase);
     const box = node('div', '', 'study-recorder');
     const controls = node('div', '', 'study-actions');
@@ -263,8 +263,7 @@
         ? 'Đã thu xong. Bạn có thể nghe lại và tải bản ghi.'
         : 'Bản ghi chưa có dữ liệu. Thử thu lại và nói trọn câu.';
       endTask(current);
-      if (!current.blob.size || !onTake) return;
-      onTake({ transcript, message: current.message, blob: current.blob });
+      if (current.blob.size) onResult?.(transcript, current.message);
     }
 
     function recognize(current) {
@@ -364,6 +363,7 @@
           if (current.blob.size) {
             clipChanged = true;
             showClip(current.blob);
+            onClip?.(current.blob);
           }
           complete(current);
         };
@@ -405,6 +405,8 @@
     const result = node('div', '', 'speech-feedback');
     result.setAttribute('role', 'status');
     result.hidden = true;
+    const storageStatus = node('small', '', 'speech-status');
+    storageStatus.setAttribute('role', 'status');
     const saved = state.pronunciation?.[lesson];
     const feedback = saved?.phrase === phrase ? saved : {};
 
@@ -438,19 +440,27 @@
 
     const recorder = recorderPanel(lesson, {
       phrase,
-      onTake({ transcript, message, blob }) {
+      onClip(blob) {
         feedback.phrase = phrase;
         feedback.recorded = true;
-        feedback.transcript = transcript;
-        const persisted = updateEntry(lesson, feedback);
-        showResult(transcript, message);
-        if (!persisted) result.append(node('p', 'Chưa lưu được kết quả trên trình duyệt này.'));
+        feedback.transcript = '';
+        result.hidden = true;
+        storageStatus.textContent = updateEntry(lesson, feedback) ? '' : 'Chưa lưu được tiến độ trên trình duyệt này.';
         withClips('readwrite', store => store.put({ phrase, blob }, lesson)).catch(() => {
-          if (box.isConnected) result.append(node('p', 'Chưa lưu được tệp âm thanh. Bạn có thể tải bản thu để giữ lại.'));
+          if (box.isConnected) storageStatus.textContent = 'Chưa lưu được tệp âm thanh. Bạn có thể tải bản thu để giữ lại.';
         });
+      },
+      onResult(transcript, message) {
+        if (transcript) {
+          feedback.transcript = transcript;
+          if (!updateEntry(lesson, feedback)) {
+            storageStatus.textContent = 'Chưa lưu được kết quả trên trình duyệt này.';
+          }
+        }
+        showResult(transcript, message);
       }
     });
-    box.append(recorder, result);
+    box.append(recorder, result, storageStatus);
     if (feedback.transcript) showResult(feedback.transcript);
 
     const compare = node('details', '', 'study-disclosure speech-compare');
