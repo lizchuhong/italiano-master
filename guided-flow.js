@@ -52,6 +52,7 @@
   };
   const practiceStage = stages.length - 2;
   const reviewStage = stages.length - 1;
+  const speakingStage = 1;
   const id = item => C ? item.id : 'I' + item.number;
   const doneKey = item => C ? item.id : item.number;
   const isDone = item => Boolean(state.done[doneKey(item)]);
@@ -323,11 +324,9 @@
       '</p><h2>' + esc(lessonTitle(item)) + '</h2>');
     const step = pagesFor(item).findIndex(indices => indices.includes(next.part));
     const position = next.resume && step >= 0 ? ' · ' + stages[step].label : '';
-    const actions = element('div', 'study-actions');
-    actions.append(lessonLink(next.resume ? 'Tiếp tục bài này →' : count === items.length ? 'Mở lại bài →' : 'Bắt đầu bài ' +
-      (next.index + 1) + ' →', next.index, next.part, 'study-primary'),
-      link('Luyện tour cả ngày', '#tour-ca-ngay', 'secondary'));
-    resume.append(element('p', 'study-resume-meta', 'Bài ' + (next.index + 1) + position), actions);
+    resume.append(element('p', 'study-resume-meta', 'Bài ' + (next.index + 1) + position),
+      lessonLink(next.resume ? 'Tiếp tục bài này →' : count === items.length ? 'Mở lại bài →' : 'Bắt đầu bài ' +
+        (next.index + 1) + ' →', next.index, next.part, 'study-primary'));
     hero.append(resume);
     root.append(hero, catalog(next.index));
   }
@@ -608,6 +607,12 @@
       root.querySelector('.study-lesson-status').textContent = statusText(item);
     });
     box.append(heading, label, status);
+    const tourProgress = window.ItalianTourDay?.progress(item.number);
+    if (tourProgress) {
+      const checkpoint = element('p', 'study-stage-help');
+      checkpoint.textContent = tourProgress;
+      box.prepend(checkpoint);
+    }
     if (C) {
       const levelLabel = element('label', '', 'Mức độ thành thạo tự đánh giá');
       const level = element('select', '', '<option value="">Chưa đánh giá</option>' +
@@ -621,14 +626,16 @@
       levelLabel.append(level);
       box.append(levelLabel);
     }
-    const checkList = disclosure('Tiêu chí tự kiểm tra và quiz theo nhóm', 'study-disclosure');
+    const checkList = disclosure('Tiêu chí tự kiểm tra của bài', 'study-disclosure');
     const hints = C ? ['Đầu vào và kết quả mong đợi có rõ ràng?', 'Đã xét trường hợp hợp lệ, lỗi và dữ liệu biên?',
       'Có kết quả chạy thử hoặc bằng chứng phù hợp?'] :
       ['Kiểm tra chia động từ, mạo từ, giống và số.', 'Câu có tự nhiên và hợp tình huống du lịch?',
         'Có thông tin lịch sử, giá hoặc thời gian cần xác minh?'];
     const list = element('ul', '', hints.map(hint => '<li>' + hint + '</li>').join(''));
-    checkList.append(list, link('Mở quiz kiến thức nền', '#quiz/' + id(item), 'secondary'));
-    box.prepend(checkList);
+    checkList.append(list);
+    const quiz = disclosure('Ôn 3 câu kiến thức nền', 'study-disclosure');
+    quiz.append(window.LearningPlus.quizPanel(item));
+    box.prepend(checkList, quiz);
     const actions = element('div', 'study-actions');
     actions.append(lessonLink('← Quay lại bài tập', current, pages[practiceStage][0]));
     if (current + 1 < items.length) {
@@ -641,7 +648,7 @@
       actions.append(link('Lưu minh chứng thực hành', '#tot-nghiep', 'secondary'));
     }
     if (item.number === 58) {
-      actions.append(link('Luyện tour cả ngày', '#tour-ca-ngay', 'secondary'));
+      actions.append(lessonLink('← Luyện tour cả ngày', current, pages[speakingStage][0]));
     }
     box.append(actions);
     return box;
@@ -674,6 +681,15 @@
 
     const article = element('article', 'study-article',
       '<h2 tabindex="-1">' + (stages[stage]?.title ?? 'Tài liệu bổ sung') + '</h2>');
+    const tour = window.ItalianTourDay;
+    const tourPractice = tour?.hasPractice(item.number);
+    const rehearsal = tour?.hasRehearsal(item.number);
+    if (stage === 0 && tourPractice) {
+      article.append(element('p', 'study-stage-help', 'Bài này có tình huống với khách trong bước Nghe &amp; nói.'));
+    }
+    if (stage === 0 && rehearsal) {
+      article.append(element('p', 'study-stage-help', 'Xem yêu cầu dẫn thử và ô ghi minh chứng ở bước Làm bài.'));
+    }
     if (stage === practiceStage) {
       article.append(element('p', 'study-stage-help',
         'Bản nháp tự lưu khi bạn gõ. Bạn có thể quay lại xem bài và tiếp tục làm.'));
@@ -686,7 +702,15 @@
       const lab = practiceLab(item);
       if (lab) article.append(lab);
     }
-    indices.forEach((index, position) => article.append(lessonPart(item, index, stage, position === 0)));
+    indices.forEach((index, position) => {
+      article.append(lessonPart(item, index, stage, position === 0));
+      if (stage === speakingStage && tourPractice && position === 0) {
+        article.append(tour.practicePanel(item.number));
+      }
+    });
+    if (stage === practiceStage && rehearsal) {
+      article.append(tour.rehearsalPanel(item.number));
+    }
     if (C && stage === 0) {
       const lab = practiceLab(item);
       if (lab) article.append(lab);
@@ -742,7 +766,7 @@
     const options = C ? [
       ['Phòng thực hành', './lab.html'], ['Bài tập 2 dự án', './projects.html'],
       ['Demo 2 sản phẩm', './product-demo.html'], ['Tài liệu FDE', './fde.html']
-    ] : [['Luyện tour cả ngày', '#tour-ca-ngay'], ['Lịch ôn D1–D30', '#lich-on'], ['Sổ lỗi tiếng Ý', '#so-loi']];
+    ] : [['Lịch ôn D1–D30', '#lich-on'], ['Sổ lỗi tiếng Ý', '#so-loi']];
     options.push(['Kế hoạch và phương pháp', '#ke-hoach'], ['Sổ tay', '#so-tay'],
       ['Mốc ứng dụng thực tế', '#cap-do'], ['Điểm đến Việt Nam', '#diem-den'],
       ['Dự án tốt nghiệp', '#tot-nghiep'], ['Sao lưu', '#sao-luu']);
@@ -777,15 +801,20 @@
     '#tot-nghiep': window.LearningPlus.capstones,
     '#sao-luu': window.LearningPlus.backup
   };
-  if (!C) Object.assign(routes, { '#lich-on': reviews, '#so-loi': errors, '#tour-ca-ngay': window.ItalianTourDay.show });
+  if (!C) Object.assign(routes, { '#lich-on': reviews, '#so-loi': errors });
 
   const lessonRoute = /^#bai\/([A-Z0-9]+)(?:\/(\d+))?$/;
   const quizRoute = /^#quiz\/([A-Z0-9]+)$/;
-  const isRoute = hash => Object.hasOwn(routes, hash) || lessonRoute.test(hash) || quizRoute.test(hash);
+  const isRoute = hash => hash === '#tour-ca-ngay' || Object.hasOwn(routes, hash) || lessonRoute.test(hash) || quizRoute.test(hash);
   let disposeLesson;
 
   function showRoute(focus) {
-    const hash = location.hash;
+    let hash = location.hash;
+    if (hash === '#tour-ca-ngay') {
+      const final = lessonIndex.get('I58');
+      hash = lessonHash(final, pagesFor(items[final])[speakingStage][0]);
+      history.replaceState(null, '', hash);
+    }
     const [, lesson, target] = lessonRoute.exec(hash) || [];
     const quiz = quizRoute.exec(hash)?.[1];
     const index = lessonIndex.get(lesson);

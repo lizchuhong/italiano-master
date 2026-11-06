@@ -72,19 +72,69 @@ function quizQuestions(item){
  let offset=[...labelItem(item)].reduce((a,c)=>a+c.charCodeAt(0),0)%bank.length;
  return bank.slice(offset).concat(bank.slice(0,offset)).map((q,i)=>({q:q[0],options:q[1],correct:q[2],explain:q[3],id:i}));
 }
-function quizView(item=items[current]){
- const key=labelItem(item),questions=quizQuestions(item);
- page('<h2>Quiz kiến thức nền theo NHÓM chủ đề</h2><p class="lp-muted">Bộ 3 câu cố định của nhóm học: '+E(category(item))+'. <strong>Không phải bài kiểm tra riêng cho '+E(item.title)+'</strong>. Muốn đối chiếu bài hiện tại, dùng bước “'+(C?'Tự kiểm tra':'Đối chiếu')+'” trong bài học. Điểm quiz chỉ thể hiện nhớ kiến thức nền, không đánh giá bài viết, code hoặc kỹ năng nghề.</p><div id="lp-quiz"></div>');
- const target=qs('#lp-quiz');
- questions.forEach((q,i)=>{const section=document.createElement('section');section.className='lp-panel';const h=document.createElement('h3');h.textContent=(i+1)+'. '+q.q;section.append(h);
- q.options.forEach((opt,j)=>{const label=document.createElement('label');label.className='lp-option';const inp=document.createElement('input');inp.type='radio';inp.name='lp-q'+i;inp.value=j;label.append(inp,document.createTextNode(' '+opt));section.append(label)});target.append(section)});
- const footer=document.createElement('div');footer.className='lp-panel';const grade=button('Chấm 3 câu',()=>{
-   const selected=questions.map((q,i)=>{const el=target.querySelector('input[name="lp-q'+i+'"]:checked');return el?Number(el.value):null});
-   if(selected.includes(null)){alert('Hãy chọn đáp án cho cả 3 câu.');return}
-   const score=questions.reduce((s,q,i)=>s+(selected[i]===q.correct?1:0),0);
-   state.lpQuiz[key]={score,total:3,date:today()};sync();
-   const out=document.createElement('div');out.className='lp-feedback';out.innerHTML='<h3>Kết quả: '+score+'/3</h3>'+questions.map((q,i)=>'<p><strong>Câu '+(i+1)+': '+(selected[i]===q.correct?'Đúng':'Cần xem lại')+'</strong>. Đáp án: '+E(q.options[q.correct])+'. '+E(q.explain)+'</p>').join('')+'<p>Đạt từ 2/3 để đánh dấu đã kiểm tra nền tảng; không tự đánh dấu hoàn thành bài học.</p>';footer.querySelector('.lp-feedback')?.remove();footer.append(out);
- },'');footer.append(grade,button('Quay lại bài',()=>{const i=items.findIndex(x=>labelItem(x)===key);const part=state.reading?.id===key?state.reading.section:undefined;if(C)openDay(items[i].id,part);else openLesson(i,part)},'secondary'));target.append(footer);
+function quizPanel(item) {
+  const key = labelItem(item);
+  const questions = quizQuestions(item);
+  const target = document.createElement('div');
+  const note = document.createElement('p');
+  note.className = 'lp-muted';
+  note.textContent = 'Ba câu ôn chung của nhóm chủ đề. Dùng đáp án và tiêu chí trong bài để đối chiếu bài tập cụ thể.';
+  target.append(note);
+
+  const previous = state.lpQuiz?.[key];
+  const inputs = questions.map((question, index) => {
+    const section = document.createElement('fieldset');
+    section.className = 'lp-panel';
+    const legend = document.createElement('legend');
+    legend.textContent = (index + 1) + '. ' + question.q;
+    section.append(legend);
+    const options = question.options.map((option, choice) => {
+      const label = document.createElement('label');
+      label.className = 'lp-option';
+      const input = document.createElement('input');
+      input.type = 'radio';
+      input.name = 'lp-q-' + key + '-' + index;
+      input.value = choice;
+      input.checked = previous?.answers?.[index] === choice;
+      label.append(input, document.createTextNode(' ' + option));
+      section.append(label);
+      return input;
+    });
+    target.append(section);
+    return options;
+  });
+
+  const output = document.createElement('div');
+  output.className = 'lp-feedback';
+  output.setAttribute('role', 'status');
+  if (previous) output.textContent = 'Kết quả đã lưu ' + previous.score + '/' + previous.total + '.';
+  const grade = button('Chấm 3 câu', () => {
+    const selected = inputs.map(options => options.findIndex(input => input.checked));
+    if (selected.includes(-1)) {
+      output.textContent = 'Hãy chọn đáp án cho cả 3 câu.';
+      return;
+    }
+    const score = questions.filter((question, index) => selected[index] === question.correct).length;
+    (state.lpQuiz ||= {})[key] = { score, total: questions.length, date: today(), answers: selected };
+    sync();
+    output.innerHTML = '<h4>Kết quả ' + score + '/' + questions.length + '</h4>' +
+      questions.map((question, index) =>
+        '<p><strong>Câu ' + (index + 1) + ' · ' + (selected[index] === question.correct ? 'Đúng' : 'Cần xem lại') +
+        '</strong>. ' + E(question.options[question.correct]) + '. ' + E(question.explain) + '</p>').join('');
+  });
+  target.append(grade, output);
+  return target;
+}
+
+function quizView(item=items[current]) {
+  page('<h2>Quiz ôn kiến thức nền</h2>');
+  const key = labelItem(item);
+  qs('.lp-page').append(quizPanel(item), button('Quay lại bài', () => {
+    const index = items.findIndex(value => labelItem(value) === key);
+    const part = state.reading?.id === key ? state.reading.section : undefined;
+    if (C) openDay(items[index].id, part);
+    else openLesson(index, part);
+  }, 'secondary'));
 }
 const stages = [
   ['Giao tiếp và ngữ pháp nền', 1, 14, 'Đón khách, giới thiệu và chỉ đường trong 90 giây. Nhờ người đối thoại hỏi ba câu bất ngờ để kiểm nghe hiểu và cách hỏi lại.'],
@@ -172,7 +222,7 @@ const projects = [
 ];
 function capstones() {
   page('<h2>Minh chứng thực hành tiếng Ý</h2><p>Lưu tên tệp, đường dẫn hoặc mốc thời gian trong bản ghi. Chỉ đánh dấu sau khi đã chạy thử và ghi phản hồi.</p>' +
-    '<p><a class="secondary" href="#tour-ca-ngay">Luyện tour cả ngày và ghi kết quả tổng duyệt</a></p><div id="lp-capstones"></div>');
+    '<p><a class="secondary" href="#bai/I58/11">Ghi kết quả tổng duyệt trong bài 58</a></p><div id="lp-capstones"></div>');
   const container = qs('#lp-capstones');
   for (const project of projects) {
     const wrap = document.createElement('section');
@@ -242,5 +292,5 @@ function backup(){
  const target=qs('.lp-page');target.append(button('Tải bản sao lưu JSON',()=>exportData()),button('Mở Tiến độ để nhập JSON',()=>progressView(),'secondary'));
  const date=state.lpBackupReminder||'';const p=document.createElement('p');p.className='lp-muted';p.textContent='Lần nhắc sao lưu gần nhất: '+(date||'chưa có');target.append(p);target.append(button('Đánh dấu đã sao lưu hôm nay',()=>{state.lpBackupReminder=today();sync();p.textContent='Đã ghi nhận hôm nay: '+today()},'secondary'));
 }
-window.LearningPlus={quizView,srsView,trips,capstones,backup,readiness};
+window.LearningPlus={quizView,quizPanel,srsView,trips,capstones,backup,readiness};
 })();

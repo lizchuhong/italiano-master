@@ -172,9 +172,17 @@
     container.append(label, field, status);
   }
 
-  function scenarioCard(scenario, logs) {
+  function scenarioCard(scenario, isFinal) {
+    const logs = state.tourDayNotes ||= {};
+    const checks = state.tourDayChecks ||= {};
     const box = create('details', '', 'lp-panel');
-    box.append(create('summary', scenario.time + ' · ' + scenario.title), create('p', scenario.task));
+    box.open = !isFinal;
+    const heading = create('summary');
+    const updateHeading = () => {
+      heading.textContent = scenario.time + ' · ' + scenario.title + (checks[scenario.id] ? ' · Đã tập' : '');
+    };
+    updateHeading();
+    box.append(heading, create('p', scenario.task));
     const actions = create('div', '', 'study-actions');
     const speechStatus = create('small');
     speechStatus.setAttribute('role', 'status');
@@ -211,7 +219,7 @@
       });
     };
     actions.append(action('Nghe câu khách', () => hear(0.95), true),
-      action('Nghe chậm', () => hear(0.72)),
+      action('Nghe câu khách chậm', () => hear(0.72)),
       action('Đổi tình huống', () => showCase(1 - version)));
     followUp.append(create('summary', 'Lượt 2 · Khách hỏi tiếp'),
       action('Nghe câu hỏi tiếp', () => hear(0.95, scenario.followUps[version]), true), nextPrompt);
@@ -219,56 +227,109 @@
     box.append(actions, speechStatus, prompt, followUp);
     savedField(box, logs, scenario.id, 'Câu trả lời của bạn hoặc nhận xét khi tập nói');
     box.append(answer);
-    const lesson = create('a', 'Ôn bài ' + scenario.lesson, 'study-text-link');
-    lesson.href = '#bai/I' + scenario.lesson;
-    box.append(lesson);
+    const label = create('label', '', 'lp-option');
+    const check = create('input');
+    check.type = 'checkbox';
+    check.checked = Boolean(checks[scenario.id]);
+    const status = create('small');
+    status.setAttribute('role', 'status');
+    check.addEventListener('change', () => {
+      checks[scenario.id] = check.checked;
+      updateHeading();
+      try {
+        save();
+        status.textContent = 'Đã lưu tự đánh giá.';
+      } catch {
+        status.textContent = 'Không lưu được trên thiết bị này.';
+      }
+    });
+    label.append(check, document.createTextNode(' Đã nói cả hai lượt và đối chiếu với yêu cầu của tình huống'));
+    box.append(label, status);
+    if (isFinal) {
+      const lesson = create('a', 'Ôn bài ' + scenario.lesson, 'study-text-link');
+      lesson.href = '#bai/I' + scenario.lesson;
+      box.append(lesson);
+    }
     return { box, showCase };
   }
 
-  function showTourDay() {
-    const logs = state.tourDayNotes ||= {};
-    const page = create('div', '', 'lp-page');
-    page.innerHTML = '<h1>Luyện dẫn tour tiếng Ý cả ngày</h1>' +
-      '<p>Đi qua một lịch tour giả lập từ đón khách đến tiễn đoàn. Với mỗi chặng, nghe câu khách, trả lời thành tiếng rồi xử lý câu hỏi tiếp. Sau đó mới mở mẫu để đối chiếu.</p>' +
-      '<p>Nếu đang lấy lại phản xạ, luyện ba chặng đón khách, trò chuyện và tập hợp đoàn trước. Mỗi lượt, thử hỏi lại một chi tiết, trả lời ngắn rồi hỏi khách một câu hoặc xác nhận bước tiếp theo.</p>' +
-      '<p class="lp-muted">Khi tập cùng người đối thoại, nhờ họ đổi chi tiết, hỏi nối hoặc ngắt lời. Xen lúc thuyết minh với lúc để khách quan sát, hỏi và nghỉ. Giờ trên màn hình là giờ của lịch mẫu.</p>';
-    const cards = scenarios.map(scenario => scenarioCard(scenario, logs));
-    let last = -1;
-    page.append(action('Bốc tình huống bất ngờ', () => {
-      let index = Math.floor(Math.random() * (cards.length - (last >= 0 ? 1 : 0)));
-      if (last >= 0 && index >= last) index++;
-      last = index;
-      const selected = cards[index];
-      selected.showCase(1);
-      selected.box.open = true;
-      const heading = selected.box.querySelector('summary');
-      heading.focus({ preventScroll: true });
-      selected.box.scrollIntoView({ block: 'start' });
-    }, true));
-    for (const card of cards) page.append(card.box);
+  const finalLesson = 58;
+  const scenariosFor = number => number === finalLesson ? scenarios : scenarios.filter(scenario => scenario.lesson === number);
+  const rehearsals = [
+    [55, '60–90 phút', 'Dẫn 2–3 điểm, trò chuyện lúc di chuyển và xử lý một câu hỏi chưa chuẩn bị.'],
+    [56, '3–4 giờ', 'Thêm giờ nghỉ, bữa ăn hoặc đổi một chặng. Nhờ người đối thoại đưa hai tình huống bất ngờ.'],
+    [finalLesson, '6–8 giờ', 'Dẫn thử theo giờ thật, có di chuyển và nghỉ. Tập ít nhất 8 lượt tương tác rải từ sáng tới chiều, gồm câu hỏi nối, điều phối giờ hoặc điểm hẹn và một sự cố cần chuyển điều phối.']
+  ];
+  const hasRehearsal = number => rehearsals.some(([lesson]) => lesson === number);
+  const rehearsalKey = number => number === finalLesson ? 'rehearsal' : 'rehearsal-' + number;
 
-    const rehearsal = create('section', '', 'lp-panel');
-    rehearsal.innerHTML = '<h2>Thử với người nói tiếng Ý</h2>' +
-      '<ol><li><strong>60–90 phút.</strong> Dẫn 2–3 điểm, trò chuyện lúc di chuyển và xử lý một câu hỏi chưa chuẩn bị.</li>' +
-      '<li><strong>3–4 giờ.</strong> Thêm giờ nghỉ, bữa ăn hoặc đổi một chặng. Nhờ người đối thoại đưa hai tình huống bất ngờ.</li>' +
-      '<li><strong>6–8 giờ.</strong> Dẫn thử theo giờ thật, có di chuyển và nghỉ. Tập ít nhất 8 lượt tương tác rải từ sáng tới chiều, gồm câu hỏi nối, điều phối giờ/điểm hẹn và một sự cố cần chuyển điều phối.</li></ol>' +
-      '<h3>Tiêu chí tổng duyệt của app</h3><p>Dùng bản đồ, lịch và số liệu làm ghi chú. Tự nói từng lượt. Người đóng vai khách hiểu và nhắc lại đúng giờ, điểm hẹn và chi phí đã chốt. Bạn hỏi lại được khi nghe thiếu, trả lời theo nguồn hoặc hẹn xác minh, và báo đúng người khi có sự cố. Cuối ngày vẫn trao đổi rõ ràng và hoàn thành việc còn treo.</p>' +
-      '<p>Chọn ít nhất ba chặng sáng, trưa và chiều để người đối thoại nhận xét về nghe hiểu, độ dễ hiểu, cách xử lý phát sinh và nhịp dẫn. Ghi một ví dụ cụ thể cho mỗi nhận xét.</p>' +
-      '<p><a href="#bai/I58/11">Mở chỗ ghi âm và tải bản ghi ở bài 58</a> · <a href="#tot-nghiep">Mở hồ sơ thực hành</a></p>';
-    savedField(rehearsal, logs, 'rehearsal', 'Minh chứng buổi tập. Ghi thời lượng, nhận xét và việc cần luyện lại.');
-    page.append(rehearsal);
+  function practicePanel(number) {
+    const isFinal = number === finalLesson;
+    const panel = create('section', '', 'study-part tour-lesson-practice');
+    panel.append(create('h3', isFinal ? 'Luyện dẫn tour tiếng Ý cả ngày' : 'Nhập vai với khách', 'study-part-heading'),
+      create('p', 'Nghe câu khách, trả lời thành tiếng rồi xử lý câu hỏi tiếp. Hỏi lại chi tiết còn thiếu và xác nhận bước tiếp theo. Sau đó mở mẫu để đối chiếu và thử lại với biến thể thứ hai.'));
+    const cards = scenariosFor(number).map(scenario => scenarioCard(scenario, isFinal));
+    if (isFinal) {
+      panel.append(create('p', 'Giờ trên màn hình là giờ của lịch mẫu. Xen lúc thuyết minh với lúc để khách quan sát, hỏi và nghỉ. Khi tập cùng người đối thoại, nhờ họ đổi chi tiết, hỏi nối hoặc ngắt lời.'));
+      let last = -1;
+      panel.append(action('Bốc tình huống bất ngờ', () => {
+        let index = Math.floor(Math.random() * (cards.length - (last >= 0 ? 1 : 0)));
+        if (last >= 0 && index >= last) index++;
+        last = index;
+        const selected = cards[index];
+        selected.showCase(1);
+        selected.box.open = true;
+        const heading = selected.box.querySelector('summary');
+        heading.focus({ preventScroll: true });
+        selected.box.scrollIntoView({ block: 'start' });
+      }, true));
+    }
+    for (const card of cards) panel.append(card.box);
+    return panel;
+  }
 
-    const references = create('section', '', 'lp-panel');
-    references.innerHTML = '<h2>Nghe giọng thật và đối chiếu điều kiện hành nghề</h2>' +
+  function referencesPanel() {
+    const references = create('details', '', 'study-disclosure');
+    references.innerHTML = '<summary>Nghe giọng thật và đối chiếu điều kiện hành nghề</summary>' +
       '<p>Nghe hội thoại thật rồi kể lại chi tiết bằng lời của bạn. Dùng mô tả tương tác B2 của CEFR làm mốc tham khảo khi tập với người nói tiếng Ý.</p>' +
       '<ul><li><a href="https://www.raiscuola.rai.it/percorsi/livellob1" target="_blank" rel="noopener">Rai Scuola · Các bài nghe tiếng Ý B1</a></li>' +
       '<li><a href="https://www.raiscuola.rai.it/italianoperstranieri/articoli/2021/06/Per-usare-litaliano-a-tavola-a2870992-9eba-46f6-adf9-efda575d5364.html" target="_blank" rel="noopener">Rai Scuola · Tiếng Ý trong bữa ăn</a></li>' +
       '<li><a href="https://www.coe.int/en/web/common-european-framework-reference-languages/table-1-cefr-3.3-common-reference-levels-global-scale" target="_blank" rel="noopener">Hội đồng châu Âu · Mô tả CEFR</a></li></ul>' +
       '<p>Để hành nghề hướng dẫn khách quốc tế tại Việt Nam, đối chiếu riêng thẻ hướng dẫn viên, giấy tờ nghiệp vụ, ngoại ngữ và điều kiện hành nghề. Bằng ngành tiếng Ý phù hợp có thể dùng làm một trong các loại giấy tờ chứng minh ngoại ngữ.</p>' +
       '<p><a href="https://vpcp.dichvucong.gov.vn/p/home/dvc-chi-tiet-thu-tuc-hanh-chinh.html?ma_thu_tuc=1.004628" target="_blank" rel="noopener">Cổng Dịch vụ công Quốc gia · Cấp thẻ hướng dẫn viên du lịch quốc tế</a></p>';
-    page.append(references);
-    root.append(page);
+    return references;
   }
 
-  window.ItalianTourDay = { show: showTourDay };
+  function rehearsalPanel(number) {
+    const logs = state.tourDayNotes ||= {};
+    const isFinal = number === finalLesson;
+    const [, duration, task] = rehearsals.find(([lesson]) => lesson === number);
+    const panel = create('section', '', 'study-part lp-panel');
+    panel.append(create('h3', 'Dẫn thử ' + duration + ' với người nói tiếng Ý', 'study-part-heading'),
+      create('p', task),
+      create('p', 'Dùng bản đồ, lịch và số liệu làm ghi chú. Tự nói từng lượt, xác nhận giờ và điểm hẹn, hỏi lại khi nghe thiếu. Ghi tình huống cần luyện lại từ phản hồi của người đối thoại.'));
+    if (isFinal) {
+      panel.append(create('h4', 'Đối chiếu sau buổi dẫn thử'),
+        create('p', 'Nhờ người đóng vai khách nhắc lại giờ, điểm hẹn và chi phí đã chốt. Xem bạn có trả lời theo nguồn, hẹn xác minh hoặc báo đúng người khi có sự cố, và còn trao đổi rõ tới cuối ngày.'),
+        create('p', 'Chọn ít nhất ba chặng sáng, trưa và chiều để người đối thoại nhận xét. Ghi một ví dụ cụ thể cho mỗi nhận xét.'));
+    }
+    panel.append(create('p', 'Bạn có thể ghi âm một đoạn ở phần Bài về nhà trong bước này, tải bản ghi và ghi lại tên tệp bên dưới.'));
+    savedField(panel, logs, rehearsalKey(number), 'Minh chứng buổi tập. Ghi thời lượng, nhận xét và việc cần luyện lại.');
+    if (isFinal) panel.append(referencesPanel());
+    return panel;
+  }
+
+  function progress(number) {
+    const assigned = scenariosFor(number);
+    const checked = assigned.filter(scenario => state.tourDayChecks?.[scenario.id]).length;
+    const parts = [];
+    if (assigned.length) parts.push(checked + '/' + assigned.length + ' tình huống đã tập và tự đối chiếu.');
+    if (hasRehearsal(number)) {
+      const notes = state.tourDayNotes?.[rehearsalKey(number)];
+      parts.push(notes?.trim() ? 'Đã ghi minh chứng buổi dẫn thử.' : 'Ghi minh chứng buổi dẫn thử ở bước Làm bài.');
+    }
+    return parts.join(' ');
+  }
+
+  window.ItalianTourDay = { hasPractice: number => scenariosFor(number).length > 0, practicePanel, hasRehearsal, rehearsalPanel, progress };
 })();
