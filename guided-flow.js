@@ -406,6 +406,21 @@
       : [9, 10].includes(sectionNumber(value));
   }
 
+  function sourceList(references) {
+    const box = disclosure('Nguồn tham khảo', 'study-disclosure');
+    const list = element('ul');
+    for (const [label, url] of references) {
+      const row = element('li');
+      const anchor = link(label, url);
+      anchor.target = '_blank';
+      anchor.rel = 'noopener noreferrer';
+      row.append(anchor);
+      list.append(row);
+    }
+    box.append(list);
+    return box;
+  }
+
   function lessonPart(item, index, stage, first) {
     const value = item.sections[index];
     const answer = isAnswer(item, index, stage);
@@ -417,6 +432,10 @@
     const markup = renderBlocks(value.blocks);
     if (!C && value.sampleText) body.append(listeningSample(value, markup));
     else body.innerHTML = markup;
+    for (const node of body.querySelectorAll('[data-block-index]')) {
+      const language = value.blocks[Number(node.dataset.blockIndex)]?.lang;
+      if (language) node.lang = language;
+    }
     window.StudyAnswers.render(body, item, index);
     for (const table of body.querySelectorAll('.tablewrap')) {
       table.tabIndex = 0;
@@ -432,6 +451,7 @@
     const [goals, , examples] = order(item);
     if (goals.includes(index)) part.classList.add('study-objective');
     if (C && examples.includes(index)) part.classList.add('study-example');
+    if (value.sources?.length) part.append(sourceList(value.sources));
     if (!C && [5, 11].includes(sectionNumber(value))) part.append(recorderPanel());
     if (C && stage < 0) {
       const url = value.blocks.map(block => block.text || '').join(' ')

@@ -1,10 +1,11 @@
 const PREFIX = 'italiano-master:';
-const CACHE = PREFIX + 'v18';
+const CACHE = PREFIX + 'v19';
 const LEGACY = ["italiano-audited-v13", "italiano-final-audit-v9", "italiano-guided-v12", "italiano-plus-v10", "italiano-plus-v11", "italiano-release-v14"];
 const ASSETS = [
   './', './index.html', './curriculum.js', './italian-deep-practice.js',
   './study-style.css', './manifest.webmanifest', './icon.svg', './travel-atlas.js',
-  './learning-plus.js?v=17', './learning-plus.css', './guided-flow.css?v=18', './guided-flow.js?v=17',
+  './learning-plus.js?v=17', './learning-plus.css', './guided-flow.css?v=18', './guided-flow.js?v=19',
+  './italian-study-lessons.js?v=19',
   './study-upgrade.js?v=17', './verified-italian-lessons.js?v=16',
 ];
 
