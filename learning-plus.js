@@ -10,11 +10,10 @@ const dayAfter=(n)=>{const d=new Date();d.setDate(d.getDate()+n);return d.toISOS
 state.lpQuiz||={};state.lpReview||={};state.lpMilestones||={};state.lpEvidence||={};state.lpTour||={};state.lpReadiness||={};
 const labelItem=(d)=>C?d.id:'I'+d.number;
 const idOfCurrent=()=>labelItem(items[current]);
-const unlock =()=>{document.body.classList.remove('reading-mode');};
 const panel=(title,body)=>'<section class="lp-panel"><h2>'+title+'</h2>'+body+'</section>';
 const button=(text,fn,cls='')=>{const b=document.createElement('button');b.textContent=text;b.className=cls;b.addEventListener('click',fn);return b};
 function sync(){try{save()}catch(e){alert('Bộ nhớ thiết bị đầy hoặc bị chặn. Hãy sao lưu dữ liệu trước khi tiếp tục. '+e.message)}}
-function page(markup){unlock();document.body.classList.remove('guided-lesson');document.querySelectorAll('body > .guide-footer').forEach(f=>f.remove());root.innerHTML='<div class="lp-page">'+markup+'</div>';root.scrollIntoView({block:'start'})}
+function page(markup){root.innerHTML='<div class="lp-page">'+markup+'</div>';root.scrollIntoView({block:'start'})}
 const L=(c,sub)=>({c,sub});
 const quizBank={
 qa:[
@@ -75,7 +74,7 @@ function quizQuestions(item){
 }
 function quizView(item=items[current]){
  const key=labelItem(item),questions=quizQuestions(item);
- page('<h2>Quiz kiến thức nền theo NHÓM chủ đề</h2><p class="lp-muted">Bộ 3 câu cố định của nhóm học: '+E(category(item))+'. <strong>Không phải bài kiểm tra riêng cho '+E(item.title)+'</strong>. Muốn đối chiếu bài hiện tại, dùng bước “Đối chiếu” trong bài học. Điểm quiz chỉ thể hiện nhớ kiến thức nền, không đánh giá bài viết, code hoặc kỹ năng nghề.</p><div id="lp-quiz"></div>');
+ page('<h2>Quiz kiến thức nền theo NHÓM chủ đề</h2><p class="lp-muted">Bộ 3 câu cố định của nhóm học: '+E(category(item))+'. <strong>Không phải bài kiểm tra riêng cho '+E(item.title)+'</strong>. Muốn đối chiếu bài hiện tại, dùng bước “'+(C?'Tự kiểm tra':'Đối chiếu')+'” trong bài học. Điểm quiz chỉ thể hiện nhớ kiến thức nền, không đánh giá bài viết, code hoặc kỹ năng nghề.</p><div id="lp-quiz"></div>');
  const target=qs('#lp-quiz');
  questions.forEach((q,i)=>{const section=document.createElement('section');section.className='lp-panel';const h=document.createElement('h3');h.textContent=(i+1)+'. '+q.q;section.append(h);
  q.options.forEach((opt,j)=>{const label=document.createElement('label');label.className='lp-option';const inp=document.createElement('input');inp.type='radio';inp.name='lp-q'+i;inp.value=j;label.append(inp,document.createTextNode(' '+opt));section.append(label)});target.append(section)});
@@ -85,7 +84,7 @@ function quizView(item=items[current]){
    const score=questions.reduce((s,q,i)=>s+(selected[i]===q.correct?1:0),0);
    state.lpQuiz[key]={score,total:3,date:today()};sync();
    const out=document.createElement('div');out.className='lp-feedback';out.innerHTML='<h3>Kết quả: '+score+'/3</h3>'+questions.map((q,i)=>'<p><strong>Câu '+(i+1)+': '+(selected[i]===q.correct?'Đúng':'Cần xem lại')+'</strong>. Đáp án: '+E(q.options[q.correct])+'. '+E(q.explain)+'</p>').join('')+'<p>Đạt từ 2/3 để đánh dấu đã kiểm tra nền tảng; không tự đánh dấu hoàn thành bài học.</p>';footer.querySelector('.lp-feedback')?.remove();footer.append(out);
- },'');footer.append(grade,button('Quay lại bài',()=>{const i=items.findIndex(x=>labelItem(x)===key);if(C)openDay(items[i].id);else openLesson(i)},'secondary'));target.append(footer);
+ },'');footer.append(grade,button('Quay lại bài',()=>{const i=items.findIndex(x=>labelItem(x)===key);const part=state.reading?.id===key?state.reading.section:undefined;if(C)openDay(items[i].id,part);else openLesson(i,part)},'secondary'));target.append(footer);
 }
 const stages=C?[
 ['QA trái ngành — nền tảng',1,2,'Biết viết test case, bug report, phân biệt Expected/Actual và mô tả luồng dữ liệu'],
@@ -128,37 +127,6 @@ function srsView(){
  const row=document.createElement('div');row.className='lp-row';
  for(const [txt,pass] of [['Quên',false],['Nhớ',true]])row.append(button(txt,()=>{const old=state.lpReview[card.id]||{level:-1};const lvl=pass?Math.min((Number.isInteger(old.level)?old.level:-1)+1,4):0;state.lpReview[card.id]={level:lvl,due:dayAfter(pass?intervals[lvl]:1),last:today()};sync();wrap.remove()},pass?'':'secondary'));
  wrap.append(row);area.append(wrap)});
-}
-function annotateCurrent(){
- const item=items[current];if(!item)return;
- const id=labelItem(item);const buttonRow=document.createElement('div');buttonRow.className='lp-row lp-inline-actions';
- buttonRow.append(button('Quiz nhóm chủ đề',()=>quizView(item),'secondary'),button('Ôn thẻ bài này',()=>{srsView()},'secondary'));
- const target=root.querySelector('.card .navdays,.card .lesson-nav');
- if(target)target.insertAdjacentElement('beforebegin',buttonRow);
- // Offer a transparent feedback check for free-text answers.
- root.querySelectorAll('.inline-answer').forEach((div,i)=>{
-  if(div.querySelector('.lp-check'))return;
-  const field=div.querySelector('textarea');if(!field)return;
-  const inspect=button('Kiểm tra & gợi ý sửa',()=>{
-    const txt=field.value.trim(),out=div.querySelector('.lp-feedback')||document.createElement('div');
-    out.className='lp-feedback';const explain=C?[
-      'Bài QA/code: có đầu vào và kết quả mong đợi rõ ràng chưa?',
-      'Đã xét đường đi hợp lệ, không hợp lệ và dữ liệu biên chưa?',
-      'Đã có code chạy thử, test report hoặc minh chứng phù hợp chưa?'
-    ]:[
-      'Tiếng Ý: kiểm tra chia động từ, mạo từ và giống/số.',
-      'Câu có tự nhiên, lịch sự và phù hợp tình huống khách du lịch chưa?',
-      'Thông tin lịch sử, giá hoặc thời gian có cần xác minh nguồn không?'
-    ];
-    if(!txt){out.textContent='Hãy nhập câu trả lời trước khi kiểm tra.'}
-    else{
-      // Unambiguous answers from the original Italian lesson 1 grammar drill.
-      out.innerHTML='<strong>Checklist tự đối chiếu — chưa chấm tự động</strong><p>'+E('Đã nhập '+txt.length+' ký tự. Hãy đối chiếu từng yêu cầu với phần Đối chiếu/đáp án của chính bài này, không dùng độ dài để kết luận đúng sai.')+'</p><ul>'+explain.map(x=>'<li>'+E(x)+'</li>').join('')+'</ul><p>Nếu không đủ dữ kiện để xác nhận, ghi rõ “cần kiểm tra nguồn” thay vì đoán. Bạn có thể sửa và nộp lại.</p>';
-    }
-    if(!out.parentNode)div.append(out)
-  },'secondary lp-check');
-  div.querySelector('.answer-actions')?.append(inspect);
- });
 }
 function trips(){
  const atlas=window.TRAVEL_ATLAS||[];
@@ -212,16 +180,5 @@ function backup(){
  const target=qs('.lp-page');target.append(button('Tải bản sao lưu JSON',()=>exportData()),button('Mở Tiến độ để nhập JSON',()=>progressView(),'secondary'));
  const date=state.lpBackupReminder||'';const p=document.createElement('p');p.className='lp-muted';p.textContent='Lần nhắc sao lưu gần nhất: '+(date||'chưa có');target.append(p);target.append(button('Đánh dấu đã sao lưu hôm nay',()=>{state.lpBackupReminder=today();sync();p.textContent='Đã ghi nhận hôm nay: '+today()},'secondary'));
 }
-function homePulse(){
- const due=cards.filter(dueCard).length,ready=Object.values(state.lpQuiz).filter(q=>q.score>=2).length;
- const box=document.createElement('div');box.className='lp-home-pulse';box.innerHTML='<strong>🎓 Góc học chủ động</strong><p>Đến hạn / chưa học: '+due+' thẻ · '+ready+' bài qua mini quiz · Học đúng nhịp: kiến thức → thực hành → kiểm thử → ôn lại.</p>';
- const row=document.createElement('div');row.className='lp-row';row.append(button('Ôn thẻ',srsView,'secondary'),button('Dự án tốt nghiệp',capstones,'secondary'),button('Lộ trình',readiness,'secondary'));box.append(row);root.prepend(box);
-}
-const nav=document.querySelector('header nav');
-for(const [name,fn] of [['Ôn tập',srsView],['Kiểm tra cấp độ',readiness],['Điểm đến VN',trips],['Dự án tốt nghiệp',capstones],['Sao lưu',backup]])nav?.append(button(name,fn,'secondary lp-nav'));
-const beforeHome=home;home=function(){beforeHome();homePulse()};
-if(C){const before=renderDay;renderDay=function(){before();annotateCurrent()}}
-else{const before=renderLesson;renderLesson=function(){before();annotateCurrent()}}
 window.LearningPlus={quizView,srsView,trips,capstones,backup,readiness};
-home();
 })();

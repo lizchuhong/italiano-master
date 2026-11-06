@@ -9,7 +9,12 @@
   function store(key, text, status) {
     state.answers ||= {};
     state.answers[key] = { text, status, updated: new Date().toISOString() };
-    save();
+    try {
+      save();
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   function buildAnswer(key, number) {
@@ -22,6 +27,7 @@
       '<small class="save-status" aria-live="polite"></small></div>';
 
     const field = box.querySelector('textarea');
+    field.spellcheck = !codeApp;
     const badge = box.querySelector('.answer-status');
     const hint = box.querySelector('.save-status');
     const update = () => {
@@ -31,8 +37,8 @@
     field.value = state.answers?.[key]?.text || '';
     update();
     field.addEventListener('input', () => {
-      store(key, field.value, 'draft');
-      hint.textContent = 'Đã lưu bản nháp';
+      hint.textContent = store(key, field.value, 'draft') ?
+        'Đã lưu bản nháp' : 'Không lưu được bản nháp trên thiết bị này.';
       update();
     });
     box.querySelector('button').addEventListener('click', () => {
@@ -41,8 +47,8 @@
         field.focus();
         return;
       }
-      store(key, field.value, 'submitted');
-      hint.textContent = 'Đã lưu trên thiết bị này';
+      hint.textContent = store(key, field.value, 'submitted') ?
+        'Đã lưu trên thiết bị này' : 'Không lưu được trên thiết bị này.';
       update();
     });
     return box;
@@ -68,7 +74,7 @@
     card.append(archive);
   }
 
-  function addQuestions(card, item) {
+  function addQuestions(card, item, section) {
     const lessonId = codeApp ? item.id : 'I' + item.number;
     const suffix = lessonId + ':s' + section + ':';
     const prefix = 'q:' + suffix;
@@ -79,7 +85,23 @@
       return buildAnswer(key, ++number);
     };
 
-    if (window.GuidedStudy?.hasExercises(item, section)) {
+    const questionFor = (prompt, key) => {
+      const question = document.createElement('div');
+      question.className = 'study-question';
+      const answer = answerFor(key);
+      const field = answer.querySelector('textarea');
+      prompt.id = field.id + '-prompt';
+      field.setAttribute('aria-describedby', prompt.id);
+      question.append(prompt, answer);
+      return question;
+    };
+    const pair = (prompt, key) => {
+      const following = prompt.nextSibling;
+      const container = prompt.parentNode;
+      container.insertBefore(questionFor(prompt, key), following);
+    };
+
+    if (window.GuidedStudy.hasExercises(item, section)) {
       const sectionData = item.sections[section];
       const numberedOnly = !codeApp && /^16\. Economia/.test(sectionData.title);
       const acceptsParagraph = !codeApp && /^9\. Esercizi/.test(sectionData.title);
@@ -94,7 +116,7 @@
         const key = prefix + 'b' + index;
         if (listTypes.has(block.type)) {
           if (numberedOnly && block.type !== 'number') return;
-          node.after(answerFor(key));
+          pair(node, key);
           return;
         }
         if (!textTypes.has(block.type)) return;
@@ -112,11 +134,11 @@
             const prompt = document.createElement('p');
             prompt.className = 'question-prompt';
             prompt.textContent = text.slice(marker.index + marker[0].length, markers[i + 1]?.index).trim();
-            group.append(prompt, answerFor(key + ':p' + i));
+            group.append(questionFor(prompt, key + ':p' + i));
           });
           node.replaceWith(group);
         } else if (acceptsParagraph || /^(?:hãy |viết |dịch |lập |tạo |vẽ |mô tả |liệt kê |so sánh |nêu |sửa:|ghi âm |tập |bài viết:|write |create |add |implement |run |test |fix |explain )|\bBài viết:/i.test(text)) {
-          node.after(answerFor(key + ':p0'));
+          pair(node, key + ':p0');
         }
       });
     }
@@ -124,29 +146,9 @@
     showSavedAnswers(card, [prefix, 'extra:' + suffix], rendered);
   }
 
-  function enhance() {
-    const card = root.querySelector('.card > .navdays, .card > .lesson-nav')?.parentElement;
-    if (!card) return;
-    const item = (codeApp ? all : lessons)[current];
-    addQuestions(card, item);
-    const legacy = root.querySelector('#work')?.closest('.card');
-    if (legacy) {
-      if (!codeApp) legacy.querySelectorAll('.controls button:not(:first-child)').forEach(button => button.remove());
-      const disclosure = document.createElement('details');
-      disclosure.className = 'optional-notes';
-      const summary = document.createElement('summary');
-      summary.textContent = codeApp ? 'Ghi chú và xem trước HTML' : 'Ghi chú của mục';
-      legacy.before(disclosure);
-      disclosure.append(summary, legacy);
-    }
-  }
+  window.StudyAnswers = { render: addQuestions };
 
-  if (codeApp) {
-    const originalRender = renderDay;
-    renderDay = function () { originalRender(); enhance(); };
-  } else {
-    const originalRender = renderLesson;
-    renderLesson = function () { originalRender(); enhance(); };
+  if (!codeApp) {
     const originalNotes = notes;
     notes = function () {
       originalNotes();

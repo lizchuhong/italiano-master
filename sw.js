@@ -1,11 +1,11 @@
 const PREFIX = 'italiano-master:';
-const CACHE = PREFIX + 'v16';
+const CACHE = PREFIX + 'v17';
 const LEGACY = ["italiano-audited-v13", "italiano-final-audit-v9", "italiano-guided-v12", "italiano-plus-v10", "italiano-plus-v11", "italiano-release-v14"];
 const ASSETS = [
   './', './index.html', './curriculum.js', './italian-deep-practice.js',
   './study-style.css', './manifest.webmanifest', './icon.svg', './travel-atlas.js',
-  './learning-plus.js', './learning-plus.css', './guided-flow.css?v=16', './guided-flow.js?v=16',
-  './study-upgrade.js?v=16', './verified-italian-lessons.js?v=16',
+  './learning-plus.js?v=17', './learning-plus.css', './guided-flow.css?v=17', './guided-flow.js?v=17',
+  './study-upgrade.js?v=17', './verified-italian-lessons.js?v=16',
 ];
 
 const scope = new URL(self.registration.scope);
