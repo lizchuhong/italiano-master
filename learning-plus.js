@@ -86,25 +86,35 @@ function quizView(item=items[current]){
    const out=document.createElement('div');out.className='lp-feedback';out.innerHTML='<h3>Kết quả: '+score+'/3</h3>'+questions.map((q,i)=>'<p><strong>Câu '+(i+1)+': '+(selected[i]===q.correct?'Đúng':'Cần xem lại')+'</strong>. Đáp án: '+E(q.options[q.correct])+'. '+E(q.explain)+'</p>').join('')+'<p>Đạt từ 2/3 để đánh dấu đã kiểm tra nền tảng; không tự đánh dấu hoàn thành bài học.</p>';footer.querySelector('.lp-feedback')?.remove();footer.append(out);
  },'');footer.append(grade,button('Quay lại bài',()=>{const i=items.findIndex(x=>labelItem(x)===key);const part=state.reading?.id===key?state.reading.section:undefined;if(C)openDay(items[i].id,part);else openLesson(i,part)},'secondary'));target.append(footer);
 }
-const stages=C?[
-['QA trái ngành — nền tảng',1,2,'Biết viết test case, bug report, phân biệt Expected/Actual và mô tả luồng dữ liệu'],
-['QA Banking & Automation',3,6,'Làm được SQL/API cơ bản, test tự động mẫu và mô tả rủi ro nghiệp vụ ngân hàng'],
-['Lập trình ứng dụng',7,22,'Hiểu Python, HTTP, SQL và backend đủ để tạo API dữ liệu mẫu'],
-['Full-stack, AI, triển khai',23,46,'Có sản phẩm chạy được, test và README triển khai'],
-['FDE, khách hàng & bàn giao',47,50,'Có demo, runbook, tài liệu yêu cầu, checklist UAT và kế hoạch vận hành']
-]:[
-['Tiếng Ý nền tảng + giao tiếp',1,14,'Dùng câu giới thiệu, chỉ đường, ngữ pháp nền và hội thoại tối thiểu 90 giây'],
-['Hướng dẫn tour & kinh doanh',15,28,'Thuyết minh có nguồn, xử lý khách, báo giá giả lập và mô tả điểm đến'],
-['SEO & booking tiếng Ý',29,38,'Viết email, FAQ, trang tour và phản hồi review'],
-['Thuyết minh nâng cao & portfolio',39,58,'Thuyết minh dài, xử lý tình huống và có portfolio nội dung']
+const stages = [
+  ['Giao tiếp và ngữ pháp nền', 1, 14, 'Đón khách, giới thiệu và chỉ đường trong 90 giây. Nhờ người đối thoại hỏi ba câu bất ngờ để kiểm nghe hiểu và cách hỏi lại.'],
+  ['Điều phối và thuyết minh', 15, 28, 'Dẫn thử tuyến 30 phút theo cue card. Gắn nguồn với dữ kiện chính, xử lý một câu hỏi xen ngang và lưu bản ghi có mốc thời gian.'],
+  ['Đặt tour, email và SEO', 29, 38, 'Soạn email và một trang tour cho cùng tuyến. Nhờ người đọc tìm đúng ngày, điểm hẹn, giá theo đơn vị và cách đổi lịch từ nội dung đã viết.'],
+  ['Tour dài và portfolio', 39, 58, 'Dẫn thử 60 phút và hỏi đáp 10–15 phút với người đối thoại. Ghi nhận phản hồi cụ thể và hoàn thiện trang tour, bài viết, email và bản ghi sau khi sửa.']
 ];
-function readiness(){
- const records=Object.entries(state.lpQuiz);
- const strong=records.filter(([k,v])=>v.score>=2).length;
- const tot=items.length;
- page('<h2>Lộ trình năng lực & điều kiện chuyển cấp</h2><p>Khóa học vẫn mở tự do để xem lại bài. Mốc chuyển cấp là checklist hỗ trợ, <strong>không tự động khóa kiến thức hay đổi tiến độ cũ.</strong></p><p class="lp-muted">Đã kiểm tra kiến thức nền đạt từ 2/3: '+strong+' bài trên '+tot+'.</p><div id="lp-stages"></div>');
- const area=qs('#lp-stages');
- stages.forEach((s,i)=>{const key='stage-'+i;const checked=!!state.lpReadiness[key];const el=document.createElement('section');el.className='lp-panel';el.innerHTML='<h3>'+E(s[0])+'</h3><p>'+E(C?'Tuần '+s[1]+'–'+s[2]:'Bài '+s[1]+'–'+s[2])+': '+E(s[3])+'</p><p class="lp-muted">Chuẩn bị: đọc lý thuyết → thực hành → bài kiểm tra → tự giải thích không nhìn đáp án.</p>';const label=document.createElement('label');label.className='lp-option';const inp=document.createElement('input');inp.type='checkbox';inp.checked=checked;inp.addEventListener('change',()=>{state.lpReadiness[key]=inp.checked;sync()});label.append(inp,document.createTextNode(' Tôi đã hoàn thành minh chứng chuyển cấp này'));el.append(label);area.append(el)});
+function readiness() {
+  page('<h2>Mốc ứng dụng thực tế</h2><p>Tự làm lại bằng dữ liệu hoặc tình huống mới rồi đánh dấu khi có đầu ra có thể kiểm.</p>' +
+    '<p><a href="#tot-nghiep">Mở trang lưu minh chứng dự án</a></p><div id="lp-stages"></div>');
+  const area = qs('#lp-stages');
+  stages.forEach(([title, first, last, evidence], index) => {
+    const key = 'practical-stage-' + index;
+    const wrap = document.createElement('section');
+    wrap.className = 'lp-panel';
+    wrap.innerHTML = '<h3>' + E(title) + '</h3><p class="lp-muted">' +
+      (C ? 'Tuần ' : 'Bài ') + first + '–' + last + '</p><p>' + E(evidence) + '</p>';
+    const label = document.createElement('label');
+    label.className = 'lp-option';
+    const check = document.createElement('input');
+    check.type = 'checkbox';
+    check.checked = !!state.lpReadiness[key];
+    check.addEventListener('change', () => {
+      state.lpReadiness[key] = check.checked;
+      sync();
+    });
+    label.append(check, document.createTextNode(' Tôi đã làm được và có minh chứng'));
+    wrap.append(label);
+    area.append(wrap);
+  });
 }
 function cardDeck(){
  const list=[];
@@ -146,34 +156,85 @@ function trips(){
  };
  qs('#lp-trip-search').addEventListener('input',e=>draw(e.target.value));draw('');
 }
-const projects=[
-{key:'tour',name:'AI Tourism Platform',phases:[
-['Discovery & phạm vi','Mô tả khách du lịch, hướng dẫn viên, operator; 5 user stories và KPI chuyển đổi.'],
-['Dữ liệu điểm đến','Bộ 10 điểm đến có nguồn, 5 tour giả, 2 tuyến tour mẫu, ghi rõ thông tin cần xác minh.'],
-['UX & trang bán tour','Landing page responsive gồm lịch trình, bao gồm/không bao gồm, FAQ, CTA, accessibility.'],
-['Backend & booking','API catalog, booking có validation, tránh đặt chỗ trùng; DB tours/departures/bookings.'],
-['Kinh doanh & economics','Giá giả, chi phí, commission, gross margin, conversion funnel, phân tích rủi ro.'],
-['Nội dung tiếng Ý & SEO','Tour page, 5 câu FAQ, email xác nhận bằng tiếng Ý, script thuyết minh 5 phút.'],
-['QA và phát hành','Test matrix 15 trường hợp, 3 negative, 2 edge, staging, CI, backup và rollback.'],
-['FDE bàn giao','Demo 8 phút, ADR, README, runbook, UAT, phản hồi operator và kế hoạch cải tiến.']
-]},
-{key:'stock',name:'AI Stock & Market Dashboard',phases:[
-['Requirements & rủi ro','Xác định đối tượng sử dụng, dữ liệu chậm/đúng thời gian và giới hạn phân tích.'],
-['Data ingestion','CSV/mock API dữ liệu giá, timezone, validation, giá âm/null, dữ liệu stale.'],
-['Watchlist & biểu đồ','UI responsive, lọc mã, biểu đồ mẫu và trạng thái loading/empty/error.'],
-['API, database & alert','Schema assets/prices/watchlists, API CRUD, cảnh báo dựa trên dữ liệu mẫu.'],
-['Financial literacy','Biến động, lợi suất quá khứ, rủi ro, phí mẫu và phân biệt dữ liệu với lời khuyên đầu tư.'],
-['Blockchain demo','Mô phỏng ledger hash-linked để hiểu tính toàn vẹn, khác biệt với cơ sở dữ liệu thông thường; không giao dịch tài sản thật.'],
-['QA, bảo mật và AI','Test data/API/UI, kiểm tra phân quyền, AI grounded response có nguồn và biết giới hạn.'],
-['Deployment & FDE','Staging, CI, monitoring, runbook, demo, tài liệu vận hành và bàn giao sản phẩm.']
-]}];
-function capstones(){
- page('<h2>Hai dự án tốt nghiệp · theo dõi bằng minh chứng</h2><p class="lp-muted">Mỗi mốc là một sản phẩm nhỏ có kiểm thử hoặc tài liệu. Đánh dấu hoàn thành do bạn tự xác nhận; không tự sinh code hay xác nhận đã deploy.</p><p><a href="https://lizchuhong.github.io/code-master-academy/product-demo.html" target="_blank" rel="noopener noreferrer">Mở bản demo tương tác AI Tourism và AI Stock (dữ liệu giả lập)</a></p><div id="lp-capstones"></div>');
- const container=qs('#lp-capstones');
- projects.forEach(p=>{
-  const done=p.phases.filter((_,i)=>state.lpMilestones[p.key+'-'+i]).length;
-  const wrap=document.createElement('section');wrap.className='lp-panel';wrap.innerHTML='<h3>'+E(p.name)+'</h3><p>'+done+'/'+p.phases.length+' mốc có minh chứng</p><progress value="'+done+'" max="'+p.phases.length+'"></progress>';
-  p.phases.forEach((x,i)=>{const k=p.key+'-'+i;const details=document.createElement('details');details.className='lp-milestone';details.innerHTML='<summary>'+(i+1)+'. '+E(x[0])+(state.lpMilestones[k]?' ✓':'')+'</summary><p>'+E(x[1])+'</p><label>Link commit / đường dẫn demo / mô tả evidence</label>';const ta=document.createElement('textarea');ta.rows=3;ta.value=state.lpEvidence[k]||'';ta.addEventListener('input',()=>{state.lpEvidence[k]=ta.value;sync()});const lb=document.createElement('label');lb.className='lp-option';const inp=document.createElement('input');inp.type='checkbox';inp.checked=!!state.lpMilestones[k];inp.addEventListener('change',()=>{if(inp.checked&&!ta.value.trim()){alert('Hãy thêm đường dẫn hoặc mô tả bằng chứng trước khi đánh dấu hoàn thành.');inp.checked=false;return}state.lpMilestones[k]=inp.checked;sync();capstones()});lb.append(inp,document.createTextNode(' Đã thực hành và kiểm thử mốc này'));details.append(ta,lb);wrap.append(details)});container.append(wrap)});
+const projects = [
+  { key: 'italian-tour', name: 'Dẫn thử city tour bằng tiếng Ý', phases: [
+    [16, 'Tuyến và nguồn', 'Chuẩn bị cue card cho từng điểm. Ghi nguồn và cách diễn đạt khi chi tiết còn cần xác minh.'],
+    [28, 'Dẫn thử 30 phút', 'Lưu bản ghi. Nhờ một người hỏi hai câu bạn chưa chuẩn bị và ghi chỗ cần sửa.'],
+    [49, 'Điều phối và ứng biến', 'Dẫn 45 phút, hỏi đáp 10 phút. Mô phỏng khách hỏi ngang hoặc cần đổi điểm hẹn.'],
+    [58, 'Buổi tổng duyệt', 'Dẫn 60 phút và hỏi đáp 10–15 phút. Lưu bản ghi, phản hồi của người đối thoại và bản sửa.']
+  ] },
+  { key: 'italian-portfolio', name: 'Portfolio nội dung và đặt tour', phases: [
+    [29, 'Email đặt tour', 'Lưu một cặp thư hỏi và trả lời. Kiểm ngày giờ, giá, điểm hẹn, điều kiện và hành động tiếp.'],
+    [50, 'Bài viết tiếng Ý', 'Lưu ba bài với mục tiêu tìm kiếm khác nhau. Ghi nguồn và phần đã kiểm lại.'],
+    [51, 'Trang bán tour', 'Lưu hai trang có lịch trình, CTA, FAQ và điều kiện. Nhờ người đọc tìm thông tin trước khi xem hướng dẫn.'],
+    [53, 'Chăm sóc khách', 'Lưu phản hồi review và email xử lý thay đổi. Nhờ người biết tiếng Ý rà giọng điệu và độ rõ.']
+  ] }
+];
+function capstones() {
+  page('<h2>Minh chứng thực hành tiếng Ý</h2><p>Lưu tên tệp, đường dẫn hoặc mốc thời gian trong bản ghi. Chỉ đánh dấu sau khi đã chạy thử và ghi phản hồi.</p><div id="lp-capstones"></div>');
+  const container = qs('#lp-capstones');
+  for (const project of projects) {
+    const wrap = document.createElement('section');
+    wrap.className = 'lp-panel';
+    wrap.innerHTML = '<h3>' + E(project.name) + '</h3><p class="lp-muted"></p>' +
+      '<progress max="' + project.phases.length + '" aria-label="' + E(project.name) + '"></progress>';
+    const progress = wrap.querySelector('progress');
+    const update = () => {
+      const done = project.phases.filter((_, i) => state.lpMilestones[project.key + '-' + i]).length;
+      progress.value = done;
+      wrap.querySelector('p').textContent = done + '/' + project.phases.length + ' mốc có minh chứng';
+    };
+
+    project.phases.forEach(([lesson, title, task], index) => {
+      const key = project.key + '-' + index;
+      const detail = document.createElement('details');
+      detail.className = 'lp-milestone';
+      detail.innerHTML = '<summary>' + E(title) + '</summary><p>' + E(task) + '</p>' +
+        '<p><a href="#bai/I' + lesson + '/11">Mở bài ' + lesson + '</a></p>' +
+        '<label for="' + key + '">Tên tệp, đường dẫn hoặc nhận xét</label>' +
+        '<textarea id="' + key + '" rows="3"></textarea><p role="status"></p>';
+      const field = detail.querySelector('textarea');
+      const status = detail.querySelector('[role="status"]');
+      field.value = state.lpEvidence[key] || '';
+      const label = document.createElement('label');
+      label.className = 'lp-option';
+      const check = document.createElement('input');
+      check.type = 'checkbox';
+      const updateTitle = () => {
+        check.checked = !!state.lpMilestones[key];
+        detail.querySelector('summary').textContent = title + (check.checked ? ' ✓' : '');
+      };
+      updateTitle();
+      field.addEventListener('input', () => {
+        state.lpEvidence[key] = field.value;
+        if (!field.value.trim() && check.checked) {
+          state.lpMilestones[key] = false;
+          updateTitle();
+          update();
+        }
+        status.textContent = '';
+        sync();
+      });
+      check.addEventListener('change', () => {
+        if (check.checked && !field.value.trim()) {
+          check.checked = false;
+          status.textContent = 'Hãy ghi lại minh chứng trước khi đánh dấu.';
+          field.focus();
+          return;
+        }
+        state.lpMilestones[key] = check.checked;
+        status.textContent = '';
+        sync();
+        updateTitle();
+        update();
+      });
+      label.append(check, document.createTextNode(' Đã thực hành và có minh chứng'));
+      detail.append(label);
+      wrap.append(detail);
+    });
+    update();
+    container.append(wrap);
+  }
 }
 function backup(){
  page('<h2>Trung tâm dữ liệu học & sao lưu</h2>'+panel('Dữ liệu hiện lưu trên thiết bị','<p>Bài làm từng câu, ghi chú cũ, trạng thái học, quiz, thẻ ôn và minh chứng dự án đều nằm trong dữ liệu JSON của app. Không có máy chủ đồng bộ hoặc chấm AI.</p><p><strong>Không xóa bộ nhớ trình duyệt hay gỡ PWA khi chưa có bản sao lưu.</strong></p><p>Để chuyển sang máy khác: Xuất JSON ở thiết bị cũ → chuyển file bằng kênh bạn tin cậy → nhập qua Tiến độ ở máy mới. File có thể chứa thông tin riêng tư.</p>'));

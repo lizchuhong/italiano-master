@@ -288,4 +288,27 @@
   past.sections[9].blocks[5].text = '1) Maria ha visitato il museo. 2) Noi abbiamo visto il monumento. 3) Non ho ancora visitato il museo.';
   past.sections[9].blocks[1].text = 'visitato / fatto / visto (anche veduto, meno comune) / preso / scritto / provato';
   relative.sections[8].blocks[0].text = 'A. Completa con che, cui o una forma di luogo adatta';
+
+  const evidence = {
+    19: 'Chọn một địa điểm đã biết. Thuyết minh 3 phút với một dữ kiện có nguồn và một quan sát tại chỗ. Ghi tên nguồn, câu tiếng Ý và chỗ cần kiểm thêm.',
+    28: 'Dùng cue card từ bài 16 và ba chặng đã tập. Mời một người đóng vai khách hỏi ít nhất hai câu bạn chưa thấy trước. Lưu bản ghi và ghi hai chỗ cần sửa với mốc thời gian.',
+    29: 'Soạn thư từ tình huống khách hỏi tour cho 4 người. Thư cần xác nhận trạng thái, ngày giờ địa phương, điểm hẹn, đơn vị giá, phần bao gồm và cách đổi lịch. Dùng chi tiết giả lập đã ghi rõ.',
+    38: 'Kéo dài tuyến 30 phút của bài 28. Thêm một chặng và thời gian hỏi đáp. Chấm theo độ rõ tuyến, độ chính xác và cách trả lời. Giữ lại các đoạn vấp để luyện từ bài 39 đến 47.',
+    39: 'Lấy một đoạn yếu từ bản ghi 45 phút của bài 38. Luyện lại bằng cue card 8 phút, rồi nghe hai bản để so độ rõ và mức phụ thuộc vào văn bản.',
+    48: 'Dùng bản ghi bài 38 để sửa dàn ý 45 phút. Ghi thời lượng từng stop, một câu nối, căn cứ cho dữ kiện và phần có thể rút nếu chậm.',
+    49: 'Chạy lại tuyến đã sửa ở bài 48. Nhờ người nghe hỏi xen vào và đổi cách hỏi. Ghi mốc thời gian bạn trả lời được, lúc phải hỏi lại và câu cần xác minh.',
+    55: 'Nối thêm các stop vào bản 45 phút. Nhờ người nghe kiểm tra tuyến và đặt câu hỏi ở một điểm bất ngờ. Lưu bản ghi và ghi một nhận xét về nhịp, độ rõ, căn cứ thông tin và cách điều phối.',
+    56: 'Dùng tuyến đã tập ở bài 55. Nhờ một người đóng vai khách hỏi về giờ, đổi tuyến và một chi tiết bạn chưa biết. Tự nghe lại và đưa lỗi lặp sang bài 57.',
+    58: 'Dẫn thử tuyến 60 phút bằng cue card và làm 10–15 phút hỏi đáp với người đối thoại. Chốt portfolio gồm bài viết, trang tour và email mẫu. Xin phản hồi về độ dễ hiểu, tính chính xác, cách xác nhận nhu cầu và xử lý câu hỏi chưa biết. Ghi việc cần sửa trước khi dùng với khách.'
+  };
+  for (const item of window.CURRICULUM.lessons) {
+    if (item.number < 19) continue;
+    const practice = item.sections[11];
+    practice.practiceLead = true;
+    practice.guideLabel = 'Bài thực hành áp dụng';
+    item.sections[8].guideLabel = 'Luyện câu và từ';
+    if (evidence[item.number]) {
+      practice.blocks.push(heading('Cách thực hành và lưu minh chứng'), paragraph(evidence[item.number]));
+    }
+  }
 })();

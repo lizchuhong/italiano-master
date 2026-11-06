@@ -118,6 +118,7 @@
     } else {
       prioritize(2, value => Boolean(value.sampleText));
       prioritize(3, value => sectionNumber(value) === 8);
+      prioritize(3, value => value.practiceLead === true);
     }
     return groups;
   }
@@ -391,9 +392,10 @@
   function recorderPanel() {
     const box = element('div', 'study-recorder',
       '<h4>Ghi âm để nghe lại</h4><p>Tự nói một lượt, nghe lại và sửa một điểm trước khi nói lần hai.</p>' +
-      '<p class="study-muted">Bản ghi có thể phát lại trong phiên này.</p>' +
+      '<p class="study-muted">Nghe lại tại đây hoặc tải xuống để lưu minh chứng.</p>' +
       '<div class="study-actions"><span id="recstatus" role="status"></span></div>' +
-      '<audio id="playback" controls aria-label="Nghe lại bản ghi"></audio>');
+      '<audio id="playback" controls aria-label="Nghe lại bản ghi"></audio>' +
+      '<a id="rec-download" class="secondary" hidden>Tải bản ghi</a>');
     const start = button('Bắt đầu ghi âm', record);
     start.id = 'recbtn';
     box.querySelector('.study-actions').prepend(start);
@@ -633,6 +635,9 @@
     } else {
       actions.append(link('Về lộ trình', '#lo-trinh', 'study-primary'));
     }
+    if ([28, 38, 49, 58].includes(item.number)) {
+      actions.append(link('Lưu minh chứng thực hành', '#tot-nghiep', 'secondary'));
+    }
     box.append(actions);
     return box;
   }
@@ -734,7 +739,7 @@
       ['Demo 2 sản phẩm', './product-demo.html'], ['Tài liệu FDE', './fde.html']
     ] : [['Lịch ôn D1–D30', '#lich-on'], ['Sổ lỗi tiếng Ý', '#so-loi']];
     options.push(['Kế hoạch và phương pháp', '#ke-hoach'], ['Sổ tay', '#so-tay'],
-      ['Kiểm tra cấp độ', '#cap-do'], ['Điểm đến Việt Nam', '#diem-den'],
+      ['Mốc ứng dụng thực tế', '#cap-do'], ['Điểm đến Việt Nam', '#diem-den'],
       ['Dự án tốt nghiệp', '#tot-nghiep'], ['Sao lưu', '#sao-luu']);
     for (const [label, href] of options) menu.append(link(label, href, 'study-menu-link'));
     toolsMenu.append(menu);
