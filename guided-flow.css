@@ -610,6 +610,29 @@ body[data-academy] .study-syllabus {
 .study-voice-label { display: block; margin-top: 6px; }
 .study-recorder h4 { margin: 0; }
 .study-recorder audio { display: block; width: min(100%, 365px); margin-top: 9px; }
+.speech-practice {
+  min-width: 0;
+  padding: clamp(10px, 2.3vw, 16px);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--page);
+}
+.speech-practice .speech-phrase {
+  margin: 8px 0;
+  color: var(--ink);
+  font-size: 1.06rem;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+.speech-practice .study-recorder { margin-top: 10px; }
+.speech-status:empty { display: none; }
+.speech-feedback { margin: 10px 0; padding: 9px 12px; border-left: 3px solid var(--accent); background: var(--paper); }
+.speech-feedback h4, .speech-feedback p { margin: 5px 0; }
+.speech-heard { overflow-wrap: anywhere; }
+.speech-files { margin-top: 8px; }
+.speech-compare { margin-top: 10px; }
+.speech-checks { margin-bottom: 10px; }
+.speech-compare textarea { width: 100%; }
 .study-actions, .study-lesson-footer {
   display: flex;
   flex-wrap: wrap;

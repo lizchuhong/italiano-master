@@ -390,19 +390,6 @@
     return box;
   }
 
-  function recorderPanel() {
-    const box = element('div', 'study-recorder',
-      '<h4>Ghi âm để nghe lại</h4><p>Tự nói một lượt, nghe lại và sửa một điểm trước khi nói lần hai.</p>' +
-      '<p class="study-muted">Nghe lại tại đây hoặc tải xuống để lưu minh chứng.</p>' +
-      '<div class="study-actions"><span id="recstatus" role="status"></span></div>' +
-      '<audio id="playback" controls aria-label="Nghe lại bản ghi"></audio>' +
-      '<a id="rec-download" class="secondary" hidden>Tải bản ghi</a>');
-    const start = button('Bắt đầu ghi âm', record);
-    start.id = 'recbtn';
-    box.querySelector('.study-actions').prepend(start);
-    return box;
-  }
-
   function isAnswer(item, index, stage) {
     const value = item.sections[index];
     return C ? Boolean(item.studyFlow && stage === reviewStage) || /^Đáp án/i.test(cleanTitle(value))
@@ -455,7 +442,9 @@
     if (goals.includes(index)) part.classList.add('study-objective');
     if (C && examples.includes(index)) part.classList.add('study-example');
     if (value.sources?.length) part.append(sourceList(value.sources));
-    if (!C && [5, 11].includes(sectionNumber(value))) part.append(recorderPanel());
+    if (!C && [5, 11].includes(sectionNumber(value)) && window.ItalianPronunciation) {
+      part.append(window.ItalianPronunciation.recorderPanel(item.number));
+    }
     if (C && stage < 0) {
       const url = value.blocks.map(block => block.text || '').join(' ')
         .match(/https:\/\/(?:docs\.python\.org|developer\.mozilla\.org|git-scm\.com|www\.postgresql\.org|fastapi\.tiangolo\.com|react\.dev|docs\.docker\.com|platform\.openai\.com|api-security\.owasp\.org)\/[^\s;]+/i)?.[0];
@@ -613,6 +602,12 @@
       checkpoint.textContent = tourProgress;
       box.prepend(checkpoint);
     }
+    const pronunciationProgress = window.ItalianPronunciation?.progress(item.number);
+    if (pronunciationProgress) {
+      const checkpoint = element('p', 'study-stage-help');
+      checkpoint.textContent = pronunciationProgress;
+      box.prepend(checkpoint);
+    }
     if (C) {
       const levelLabel = element('label', '', 'Mức độ thành thạo tự đánh giá');
       const level = element('select', '', '<option value="">Chưa đánh giá</option>' +
@@ -704,8 +699,9 @@
     }
     indices.forEach((index, position) => {
       article.append(lessonPart(item, index, stage, position === 0));
-      if (stage === speakingStage && tourPractice && position === 0) {
-        article.append(tour.practicePanel(item.number));
+      if (stage === speakingStage && position === 0) {
+        if (window.ItalianPronunciation) article.append(window.ItalianPronunciation.practicePanel(item));
+        if (tourPractice) article.append(tour.practicePanel(item.number));
       }
     });
     if (stage === practiceStage && rehearsal) {
@@ -821,9 +817,7 @@
     disposeLesson?.();
     disposeLesson = undefined;
     if (!C) {
-      if (recorder?.state === 'recording') recorder.stop();
-      const audio = root.querySelector('#playback')?.getAttribute('src');
-      if (audio) URL.revokeObjectURL(audio);
+      window.ItalianPronunciation?.dispose();
       window.speechSynthesis?.cancel();
     }
     activeLesson = undefined;
