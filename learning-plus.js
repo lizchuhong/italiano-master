@@ -171,7 +171,8 @@ const projects = [
   ] }
 ];
 function capstones() {
-  page('<h2>Minh chứng thực hành tiếng Ý</h2><p>Lưu tên tệp, đường dẫn hoặc mốc thời gian trong bản ghi. Chỉ đánh dấu sau khi đã chạy thử và ghi phản hồi.</p><div id="lp-capstones"></div>');
+  page('<h2>Minh chứng thực hành tiếng Ý</h2><p>Lưu tên tệp, đường dẫn hoặc mốc thời gian trong bản ghi. Chỉ đánh dấu sau khi đã chạy thử và ghi phản hồi.</p>' +
+    '<p><a class="secondary" href="#tour-ca-ngay">Luyện tour cả ngày và ghi kết quả tổng duyệt</a></p><div id="lp-capstones"></div>');
   const container = qs('#lp-capstones');
   for (const project of projects) {
     const wrap = document.createElement('section');

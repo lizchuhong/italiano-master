@@ -323,9 +323,11 @@
       '</p><h2>' + esc(lessonTitle(item)) + '</h2>');
     const step = pagesFor(item).findIndex(indices => indices.includes(next.part));
     const position = next.resume && step >= 0 ? ' · ' + stages[step].label : '';
-    resume.append(element('p', 'study-resume-meta', 'Bài ' + (next.index + 1) + position),
-      lessonLink(next.resume ? 'Tiếp tục bài này →' : count === items.length ? 'Mở lại bài →' : 'Bắt đầu bài ' +
-        (next.index + 1) + ' →', next.index, next.part, 'study-primary'));
+    const actions = element('div', 'study-actions');
+    actions.append(lessonLink(next.resume ? 'Tiếp tục bài này →' : count === items.length ? 'Mở lại bài →' : 'Bắt đầu bài ' +
+      (next.index + 1) + ' →', next.index, next.part, 'study-primary'),
+      link('Luyện tour cả ngày', '#tour-ca-ngay', 'secondary'));
+    resume.append(element('p', 'study-resume-meta', 'Bài ' + (next.index + 1) + position), actions);
     hero.append(resume);
     root.append(hero, catalog(next.index));
   }
@@ -638,6 +640,9 @@
     if ([28, 38, 49, 58].includes(item.number)) {
       actions.append(link('Lưu minh chứng thực hành', '#tot-nghiep', 'secondary'));
     }
+    if (item.number === 58) {
+      actions.append(link('Luyện tour cả ngày', '#tour-ca-ngay', 'secondary'));
+    }
     box.append(actions);
     return box;
   }
@@ -737,7 +742,7 @@
     const options = C ? [
       ['Phòng thực hành', './lab.html'], ['Bài tập 2 dự án', './projects.html'],
       ['Demo 2 sản phẩm', './product-demo.html'], ['Tài liệu FDE', './fde.html']
-    ] : [['Lịch ôn D1–D30', '#lich-on'], ['Sổ lỗi tiếng Ý', '#so-loi']];
+    ] : [['Luyện tour cả ngày', '#tour-ca-ngay'], ['Lịch ôn D1–D30', '#lich-on'], ['Sổ lỗi tiếng Ý', '#so-loi']];
     options.push(['Kế hoạch và phương pháp', '#ke-hoach'], ['Sổ tay', '#so-tay'],
       ['Mốc ứng dụng thực tế', '#cap-do'], ['Điểm đến Việt Nam', '#diem-den'],
       ['Dự án tốt nghiệp', '#tot-nghiep'], ['Sao lưu', '#sao-luu']);
@@ -772,7 +777,7 @@
     '#tot-nghiep': window.LearningPlus.capstones,
     '#sao-luu': window.LearningPlus.backup
   };
-  if (!C) Object.assign(routes, { '#lich-on': reviews, '#so-loi': errors });
+  if (!C) Object.assign(routes, { '#lich-on': reviews, '#so-loi': errors, '#tour-ca-ngay': window.ItalianTourDay.show });
 
   const lessonRoute = /^#bai\/([A-Z0-9]+)(?:\/(\d+))?$/;
   const quizRoute = /^#quiz\/([A-Z0-9]+)$/;
@@ -790,7 +795,7 @@
       if (recorder?.state === 'recording') recorder.stop();
       const audio = root.querySelector('#playback')?.getAttribute('src');
       if (audio) URL.revokeObjectURL(audio);
-      if (activeLesson) window.speechSynthesis?.cancel();
+      window.speechSynthesis?.cancel();
     }
     activeLesson = undefined;
     toolsMenu.open = false;
