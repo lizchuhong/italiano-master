@@ -70,7 +70,7 @@
   function material(item) {
     if (!isCode) {
       const exercise = section(item, /^9\.\s*Esercizi/i);
-      const answer = section(item, /^10\.\s*Answer/i);
+      const answer = section(item, /^10\.\s*(?:Answer|Risposte)/i);
       if (exercise && answer) return {
         prompt: firstGroup(exercise.blocks), reference: firstGroup(answer.blocks),
         referenceTitle: 'Đáp án tham khảo từ bài học'
@@ -91,7 +91,7 @@
     const bankingTask = originalText?.match(/Bài tập\s*:\s*([\s\S]+)/i)?.[1]?.trim();
     const practice = section(item, /^D\.\s*Luyện/i) || section(item, /check understanding/i) ||
       section(item, /interview question/i) || section(item, /exercise/i) ||
-      section(item, /thực hành|bài tập|kiểm tra/i);
+      section(item, /thực hành|bài tập|kiểm tra|lab|homework/i);
     const ref = section(item, /^C\.\s*Ví dụ/i) || section(item, /đáp án|answer key/i) ||
       section(item, /simple example|concept explanation|ví dụ/i);
     const candidates = (practice?.blocks || []).filter(b => meaningful(b) && !/heading/i.test(b.type || ''));
