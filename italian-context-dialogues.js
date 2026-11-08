@@ -255,6 +255,7 @@
       {type:'text', text:'Tập lại hai lượt: đổi vai, sau đó trả lời không nhìn mẫu. Với giá, giờ, điều kiện và lịch sử, kiểm tra nguồn thực tế trước khi dùng với khách.'}
     ];
     section.sampleText = dialogue.map(line => line[1]).join(' ');
+    section.isReferenceDialogue = true;
     section.sources = lesson.sections?.[1]?.sources || [];
     if (lesson.number === 22) section.sources = [
       ...section.sources,
