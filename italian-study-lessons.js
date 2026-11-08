@@ -303,6 +303,16 @@
   };
   for (const item of window.CURRICULUM.lessons) {
     if (item.number < 19) continue;
+    const [topic, theory, example, explanation, verify] = lessons[item.number - 1];
+    item.sections[8].blocks.unshift(
+      { type: 'number', text: 'Không nhìn bài: giải thích bằng lời của bạn cách áp dụng “' + topic + '” và nêu một ví dụ phù hợp.' },
+      { type: 'number', text: 'Thực hành theo chủ đề: ' + verify }
+    );
+    item.sections[9].blocks.unshift(
+      paragraph('Gợi ý đối chiếu, không phải lời giải duy nhất: ' + theory),
+      paragraph('Ví dụ tham khảo: ' + example + ' ' + explanation)
+    );
+    item.sections[9].sources = item.sections[1].sources;
     const practice = item.sections[11];
     practice.practiceLead = true;
     practice.guideLabel = 'Bài thực hành áp dụng';
@@ -312,3 +322,4 @@
     }
   }
 })();
+
