@@ -280,13 +280,15 @@
   }
 
   // These wording corrections keep exercise and answer indices intact.
-  const [greeting, past, relative] = [1, 6, 12].map(number => window.CURRICULUM.lessons[number - 1]);
+  const [greeting, past, pastEssere, pronouns, relative] = [1, 6, 7, 10, 12].map(number => window.CURRICULUM.lessons[number - 1]);
   greeting.sections[8].blocks[0].text = 'A. Completa con essere, avere, chiamarsi o stare';
   greeting.sections[8].blocks[1].text =
     '1) Io ___ la vostra guida. 2) Mi ___ Anna. 3) Noi ___ due bambini nel gruppo. 4) Lei ___ bisogno di aiuto? 5) Come ___ oggi, signora? (stare)';
   past.sections[8].blocks[5].text = '1) Maria ha visitata il museo. 2) Noi ha visto il monumento. 3) Ho ancora non visitato il museo.';
   past.sections[9].blocks[5].text = '1) Maria ha visitato il museo. 2) Noi abbiamo visto il monumento. 3) Non ho ancora visitato il museo.';
   past.sections[9].blocks[1].text = 'visitato / fatto / visto (anche veduto, meno comune) / preso / scritto / provato';
+  pastEssere.sections[9].blocks[3].text = 'Vì đề không nêu chủ ngữ, có nhiều cách chia đúng. Ví dụ: 1) ho/abbiamo visitato; 2) siamo/siete/sono arrivati; 3) ho/abbiamo preso; 4) siamo/siete/sono tornate (nhóm nữ); 5) ho/abbiamo visto. Với visitato, preso và visto có thể dùng các ngôi khác của avere nếu chủ ngữ phù hợp.';
+  pronouns.sections[9].blocks[7].text = '1) Le mostrerò la mappa. 2) La accompagnerò all’ingresso. 3) Le invierò la conferma. Cũng có thể dùng hiện tại để nói việc tương lai khi ngữ cảnh đã làm rõ thời gian.';
   relative.sections[8].blocks[0].text = 'A. Completa con che, cui o una forma di luogo adatta';
 
   const evidence = {
