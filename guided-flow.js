@@ -328,7 +328,7 @@
       lessonLink(next.resume ? 'Tiếp tục bài này →' : count === items.length ? 'Mở lại bài →' : 'Bắt đầu bài ' +
         (next.index + 1) + ' →', next.index, next.part, 'study-primary'));
     hero.append(resume);
-    root.append(hero, catalog(next.index));
+    root.append(hero, window.DailyReview.homePanel(), catalog(next.index));
   }
 
   function lessonSidebar(item) {
@@ -579,6 +579,7 @@
 
   function reviewTools(item, pages) {
     const box = element('section', 'study-finish');
+    box.append(window.DailyReview.lessonPanel(item));
     const heading = element('h3', '', 'Hoàn thành bài');
     const label = element('label', 'study-complete');
     const check = element('input');
@@ -788,6 +789,7 @@
 
   const routes = {
     '#lo-trinh': showHome,
+    '#kiem-tra-hang-ngay': window.DailyReview.show,
     '#on-tap': window.LearningPlus.srsView,
     '#tien-do': progressView,
     '#so-tay': notes,
@@ -865,3 +867,4 @@
   window.addEventListener('hashchange', () => showRoute(true));
   showRoute(false);
 })();
+
