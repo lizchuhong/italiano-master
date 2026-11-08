@@ -11,7 +11,7 @@
       ? 'Chia bài thành các phiên 25–30 phút; ghi lại bước đang làm và tiếp tục nếu chưa xong.'
       : longTour
         ? 'Ước tính 2–4 giờ hoặc hơn, chia qua nhiều buổi: lập dàn ý, tập thử theo thời lượng bài, nghe lại và sửa. Thời gian mô phỏng tour không thể rút ngắn thành một buổi 20 phút.'
-        : 'Ước tính 70–110 phút: 20–30 phút học và nghe, 20–30 phút nói/ghi âm, 20–35 phút làm và đối chiếu. Có thể chia 15–20 phút sáng và một hoặc hai buổi tối; tiếp tục hôm sau nếu chưa xong.';
+        : 'Ước tính khoảng 60–95 phút hoặc hơn: 20–30 phút học và nghe, 20–30 phút nói/ghi âm, 20–35 phút làm và đối chiếu. Có thể chia 15–20 phút sáng và một hoặc hai buổi tối; tiếp tục hôm sau nếu chưa xong.';
     section.blocks.push({type: isCode ? 'Callout' : 'text', text});
   });
   const id = item => isCode ? item.id : 'I' + item.number;
