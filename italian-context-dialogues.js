@@ -75,7 +75,7 @@
       ['Operatrice', 'Le confermerò la scadenza e il fuso orario indicati nelle condizioni.', 'Tôi sẽ xác nhận hạn chót và múi giờ ghi trong điều kiện.']
     ],
     31: [
-      ['Cliente', 'Possiamo spostare l’orario in cui passate a prenderci alle nove?', 'Có thể chuyển giờ đón sang 9 giờ không?'],
+      ['Cliente', 'Potete venire a prenderci alle nove invece che all’orario previsto?', 'Các bạn có thể đón chúng tôi lúc 9 giờ thay cho giờ đã dự kiến không?'],
       ['Operatrice', 'Verifico con il servizio di trasporto e le confermo se è possibile.', 'Tôi sẽ kiểm tra với bên vận chuyển và xác nhận có thể hay không.'],
       ['Cliente', 'Cambierà il punto d’incontro?', 'Điểm hẹn có thay đổi không?'],
       ['Operatrice', 'Le invierò un riepilogo con ora e luogo dopo la conferma.', 'Sau khi xác nhận, tôi sẽ gửi lại bản tóm tắt giờ và địa điểm.']
@@ -150,7 +150,7 @@
       ['Ospite', 'Abbiamo aspettato molto al punto d’incontro.', 'Chúng tôi đã chờ rất lâu ở điểm hẹn.'],
       ['Guida', 'Mi dispiace per l’attesa. A che ora siete arrivati?', 'Tôi rất tiếc vì đã để quý khách chờ. Quý khách đến lúc mấy giờ ạ?'],
       ['Ospite', 'Alle otto e trenta.', 'Lúc 8 giờ 30.'],
-      ['Guida', 'Verifico l’orario con l’ufficio e le do un aggiornamento.', 'Tôi sẽ kiểm tra giờ với văn phòng và cập nhật cho quý khách.']
+      ['Guida', 'Verifico l’orario con l’ufficio e vi do un aggiornamento.', 'Tôi sẽ kiểm tra giờ với văn phòng và cập nhật cho quý khách.']
     ],
     44: [
       ['Ospite', 'Possiamo cambiare percorso?', 'Chúng ta có thể đổi tuyến không?'],
