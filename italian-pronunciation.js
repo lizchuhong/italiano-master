@@ -29,7 +29,9 @@
   const wordKey = text => text.toLocaleLowerCase('it').normalize('NFD').replace(/\p{M}/gu, '');
 
   function phraseFor(item) {
-    const text = item.sections.find(section => section.sampleText)?.sampleText || '';
+    // Keep the learner's established recording phrase when a new model dialogue is added.
+    const text = item.sections.find(section => section.sampleText && !section.isReferenceDialogue)?.sampleText ||
+      item.sections.find(section => section.sampleText)?.sampleText || '';
     const phrases = (text.match(/[^.!?]+[.!?]*/g) || [])
       .map(phrase => phrase.trim())
       .filter(phrase => !/^(?:Errore|Motivo)\s*:/i.test(phrase))
@@ -522,3 +524,4 @@
   window.addEventListener('pagehide', () => active?.cancel());
   window.ItalianPronunciation = { practicePanel, recorderPanel, progress, dispose };
 })();
+
