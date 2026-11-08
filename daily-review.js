@@ -6,9 +6,12 @@
   items.forEach(item => {
     const section = item.sections?.[isCode ? (item.studyFlow?.[0]?.[0] ?? 0) : 0];
     if (!section?.blocks) return;
+    const longTour = [28, 38, 48, 49, 55, 56, 58].includes(item.number);
     const text = isCode
-      ? 'Thời lượng ước tính: 60–150 phút tùy bài và mức quen thuộc; bài cài đặt hoặc lab có thể cần lâu hơn. Có thể chia thành các phiên 25–30 phút, tiếp tục ở bước đang học và chỉ đánh dấu hoàn thành khi đã thực hành.'
-      : 'Thời lượng ước tính: 60–120 phút cho nội dung, bài tập và luyện nói; chia thành 15–20 phút buổi sáng và các phiên ngắn buổi tối. Bài mô phỏng tour dài có thể cần thêm nhiều buổi. Nếu chưa xong, tiếp tục hôm sau.';
+      ? 'Chia bài thành các phiên 25–30 phút; ghi lại bước đang làm và tiếp tục nếu chưa xong.'
+      : longTour
+        ? 'Ước tính 2–4 giờ hoặc hơn, chia qua nhiều buổi: lập dàn ý, tập thử theo thời lượng bài, nghe lại và sửa. Thời gian mô phỏng tour không thể rút ngắn thành một buổi 20 phút.'
+        : 'Ước tính 70–110 phút: 20–30 phút học và nghe, 20–30 phút nói/ghi âm, 20–35 phút làm và đối chiếu. Có thể chia 15–20 phút sáng và một hoặc hai buổi tối; tiếp tục hôm sau nếu chưa xong.';
     section.blocks.push({type: isCode ? 'Callout' : 'text', text});
   });
   const id = item => isCode ? item.id : 'I' + item.number;
